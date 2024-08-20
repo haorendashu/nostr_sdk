@@ -1,7 +1,7 @@
 import 'client_utils/keys.dart';
 import 'event.dart';
 import 'event_kind.dart';
-import 'nip02/cust_contact_list.dart';
+import 'nip02/contact_list.dart';
 import 'relay/event_filter.dart';
 import 'relay/relay.dart';
 import 'relay/relay_pool.dart';
@@ -85,7 +85,7 @@ class Nostr {
         tempRelays: tempRelays, targetRelays: targetRelays);
   }
 
-  Future<Event?> sendContactList(CustContactList contacts, String content,
+  Future<Event?> sendContactList(ContactList contacts, String content,
       {List<String>? tempRelays, List<String>? targetRelays}) async {
     final tags = contacts.toJson();
     final event = Event(_publicKey, EventKind.CONTACT_LIST, tags, content);

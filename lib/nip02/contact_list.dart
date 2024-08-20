@@ -1,13 +1,13 @@
 import 'contact.dart';
 
-class CustContactList {
+class ContactList {
   late Map<String, Contact> _contacts;
 
   late Map<String, int> _followedTags;
 
   late Map<String, int> _followedCommunitys;
 
-  CustContactList({
+  ContactList({
     Map<String, Contact>? contacts,
     Map<String, int>? followedTags,
     Map<String, int>? followedCommunitys,
@@ -54,16 +54,15 @@ class CustContactList {
     }
   }
 
-  factory CustContactList.fromJson(List<dynamic> tags) {
+  factory ContactList.fromJson(List<dynamic> tags) {
     Map<String, Contact> _contacts = {};
     Map<String, int> _followedTags = {};
     Map<String, int> _followedCommunitys = {};
     getContactInfoFromTags(tags, _contacts, _followedTags, _followedCommunitys);
-    return CustContactList._(_contacts, _followedTags, _followedCommunitys);
+    return ContactList._(_contacts, _followedTags, _followedCommunitys);
   }
 
-  CustContactList._(
-      this._contacts, this._followedTags, this._followedCommunitys);
+  ContactList._(this._contacts, this._followedTags, this._followedCommunitys);
 
   List<dynamic> toJson() {
     List<dynamic> result = [];

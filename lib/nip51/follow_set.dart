@@ -5,11 +5,11 @@ import 'package:pointycastle/export.dart';
 import '../event.dart';
 import '../event_kind.dart';
 import '../nip02/contact.dart';
-import '../nip02/cust_contact_list.dart';
+import '../nip02/contact_list.dart';
 import '../nostr.dart';
 import '../utils/string_util.dart';
 
-class FollowSet extends CustContactList {
+class FollowSet extends ContactList {
   String dTag;
 
   String? title;
@@ -70,7 +70,7 @@ class FollowSet extends CustContactList {
     Map<String, int> privateFollowedTags = {};
     Map<String, int> privateFollowedCommunitys = {};
 
-    CustContactList.getContactInfoFromTags(
+    ContactList.getContactInfoFromTags(
         e.tags, publicContacts, publicFollowedTags, publicFollowedCommunitys);
     String dTag = "";
     String? title;
@@ -94,7 +94,7 @@ class FollowSet extends CustContactList {
         if (StringUtil.isNotBlank(contentSource)) {
           var jsonObj = jsonDecode(contentSource!);
           if (jsonObj is List) {
-            CustContactList.getContactInfoFromTags(jsonObj, privateContacts,
+            ContactList.getContactInfoFromTags(jsonObj, privateContacts,
                 privateFollowedTags, privateFollowedCommunitys);
           }
         }
