@@ -33,8 +33,8 @@ class GiftWrapUtil {
     return Event.fromJson(jsonObj);
   }
 
-  static Future<Event?> getGiftWrapEvent(Nostr nostr, 
-      Event e, Nostr targetNostr, String receiverPublicKey) async {
+  static Future<Event?> getGiftWrapEvent(
+      Nostr nostr, Event e, Nostr targetNostr, String receiverPublicKey) async {
     var giftEventCreatedAt =
         e.createdAt - math.Random().nextInt(60 * 60 * 24 * 2);
     var rumorEventMap = e.toJson();
@@ -61,8 +61,7 @@ class GiftWrapUtil {
           ["p", receiverPublicKey]
         ],
         giftWrapEventContent,
-        publishAt:
-            DateTime.fromMillisecondsSinceEpoch(giftEventCreatedAt * 1000));
+        createdAt: giftEventCreatedAt);
     giftWrapEvent.sign(randomPrivateKey);
 
     return giftWrapEvent;
