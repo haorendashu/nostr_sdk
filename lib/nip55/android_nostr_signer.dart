@@ -207,7 +207,7 @@ class AndroidNostrSigner implements NostrSigner {
     intent.setAction(ACTION_VIEW);
     intent.setData("$URI_PRE:$eventJson");
 
-    intent.putExtra("type", "sing_event");
+    intent.putExtra("type", "sign_event");
     intent.putExtra("current_user", _npub);
     intent.putExtra("id", event.id);
 
