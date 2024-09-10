@@ -29,4 +29,16 @@ class NostrRemoteResponse {
 
     return null;
   }
+
+  Future<String?> encrypt(NostrSigner signer, String pubkey) async {
+    Map<String, dynamic> jsonMap = {};
+    jsonMap["id"] = id;
+    jsonMap["result"] = result;
+    if (StringUtil.isNotBlank(error)) {
+      jsonMap["error"] = error;
+    }
+
+    var jsonStr = jsonEncode(jsonMap);
+    return await signer.encrypt(pubkey, jsonStr);
+  }
 }

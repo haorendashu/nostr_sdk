@@ -13,12 +13,39 @@ class NostrRemoteRequest {
   NostrRemoteRequest(this.method, this.params) : id = StringUtil.rndNameStr(12);
 
   Future<String?> encrypt(NostrSigner signer, String pubkey) async {
-    var jsonMap = Map();
+    Map<String, dynamic> jsonMap = {};
     jsonMap["id"] = id;
     jsonMap["method"] = method;
     jsonMap["params"] = params;
 
     var jsonStr = jsonEncode(jsonMap);
     return await signer.encrypt(pubkey, jsonStr);
+  }
+
+  static Future<NostrRemoteRequest?> decrypt(
+      String ciphertext, NostrSigner signer, String pubkey) async {
+    var plaintext = await signer.decrypt(pubkey, ciphertext);
+    if (StringUtil.isNotBlank(plaintext)) {
+      // print(plaintext);
+      var jsonMap = jsonDecode(plaintext!);
+
+      var id = jsonMap["id"];
+      var method = jsonMap["method"];
+      var _params = jsonMap["params"];
+      List<String> params = [];
+      if (_params != null && _params is List) {
+        for (var param in _params) {
+          params.add(param);
+        }
+      }
+
+      if (id != null && id is String && method != null && method is String) {
+        var request = NostrRemoteRequest(method, params);
+        request.id = id;
+        return request;
+      }
+    }
+
+    return null;
   }
 }
