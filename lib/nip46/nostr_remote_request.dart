@@ -24,26 +24,31 @@ class NostrRemoteRequest {
 
   static Future<NostrRemoteRequest?> decrypt(
       String ciphertext, NostrSigner signer, String pubkey) async {
-    var plaintext = await signer.decrypt(pubkey, ciphertext);
-    if (StringUtil.isNotBlank(plaintext)) {
-      // print(plaintext);
-      var jsonMap = jsonDecode(plaintext!);
+    try {
+      var plaintext = await signer.decrypt(pubkey, ciphertext);
+      if (StringUtil.isNotBlank(plaintext)) {
+        // print(plaintext);
+        var jsonMap = jsonDecode(plaintext!);
 
-      var id = jsonMap["id"];
-      var method = jsonMap["method"];
-      var _params = jsonMap["params"];
-      List<String> params = [];
-      if (_params != null && _params is List) {
-        for (var param in _params) {
-          params.add(param);
+        var id = jsonMap["id"];
+        var method = jsonMap["method"];
+        var _params = jsonMap["params"];
+        List<String> params = [];
+        if (_params != null && _params is List) {
+          for (var param in _params) {
+            params.add(param);
+          }
+        }
+
+        if (id != null && id is String && method != null && method is String) {
+          var request = NostrRemoteRequest(method, params);
+          request.id = id;
+          return request;
         }
       }
-
-      if (id != null && id is String && method != null && method is String) {
-        var request = NostrRemoteRequest(method, params);
-        request.id = id;
-        return request;
-      }
+    } catch (e) {
+      print("NostrRemoteRequest decrypt error");
+      print(e);
     }
 
     return null;
