@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 import '../event.dart';
+import '../relay/event_filter.dart';
 import '../utils/platform_util.dart';
 import '../utils/string_util.dart';
 
@@ -104,10 +105,16 @@ class RelayLocalDB {
     return loadEventFromMaps(rawEvents);
   }
 
-  List<Event> loadEventFromMaps(List<Map<String, Object?>> rawEvents) {
+  List<Event> loadEventFromMaps(List<Map<String, Object?>> rawEvents,
+      {EventFilter? eventFilter}) {
     List<Event> events = [];
     for (var rawEvent in rawEvents) {
       var event = Event.fromJson(rawEvent);
+
+      if (eventFilter != null && eventFilter.check(event)) {
+        continue;
+      }
+
       var sources = rawEvent["sources"];
       if (sources != null && sources is List) {
         for (var source in sources) {
