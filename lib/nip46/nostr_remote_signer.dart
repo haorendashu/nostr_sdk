@@ -36,7 +36,11 @@ class NostrRemoteSigner extends NostrSigner {
   Map<String, Completer<String?>> callbacks = {};
 
   Future<void> connect() async {
-    localNostrSigner = LocalNostrSigner(Nip19.decode(info.nsec));
+    if (StringUtil.isNotBlank(info.nsec)) {
+      return;
+    }
+
+    localNostrSigner = LocalNostrSigner(Nip19.decode(info.nsec!));
 
     for (var remoteRelayAddr in info.relays) {
       var relay = await _connectToRelay(remoteRelayAddr);

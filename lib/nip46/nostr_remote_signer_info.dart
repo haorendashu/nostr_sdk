@@ -2,6 +2,7 @@ import '../client_utils/keys.dart';
 import '../nip19/nip19.dart';
 import '../utils/string_util.dart';
 
+/// This client is designed for nostr client.
 class NostrRemoteSignerInfo {
   String remoteUserPubkey;
 
@@ -9,13 +10,14 @@ class NostrRemoteSignerInfo {
 
   String? optionalSecret;
 
-  String nsec;
+  // RemoteSignerKey nsec, sometime need to save all info in one place, so nsec should save as a par here.
+  String? nsec;
 
   NostrRemoteSignerInfo({
     required this.remoteUserPubkey,
     required this.relays,
     this.optionalSecret,
-    required this.nsec,
+    this.nsec,
   });
 
   @override
@@ -23,7 +25,9 @@ class NostrRemoteSignerInfo {
     Map<String, dynamic> pars = {};
     pars["relay"] = relays;
     pars["secret"] = optionalSecret;
-    pars["nsec"] = nsec;
+    if (nsec != null) {
+      pars["nsec"] = nsec;
+    }
 
     var uri = Uri(
       scheme: "bunker",

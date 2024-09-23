@@ -111,7 +111,9 @@ class RelayIsolate extends Relay {
         if (message == RelayIsolateMsgs.CONNECTED) {
           // print("$url receive connected status!");
           relayStatus.connected = ClientConneccted.CONNECTED;
-          relayStatusCallback!();
+          if (relayStatusCallback != null) {
+            relayStatusCallback!();
+          }
           _relayConnectComplete(true);
         } else if (message == RelayIsolateMsgs.DIS_CONNECTED) {
           onError("Websocket error $url", reconnect: true);
