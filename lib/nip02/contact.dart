@@ -14,11 +14,6 @@ class Contact {
     if (!keyIsValid(publicKey)) {
       throw ArgumentError.value(publicKey, 'publicKey', 'Invalid key');
     }
-    if (url.isNotEmpty &&
-        !url.contains(RegExp(
-            r'^(wss?:\/\/)([0-9]{1,3}(?:\.[0-9]{1,3}){3}|[^:]+):?([0-9]{1,5})?$'))) {
-      throw ArgumentError.value(url, 'url', 'Invalid relay address');
-    }
   }
 
   /// The contact's public key.

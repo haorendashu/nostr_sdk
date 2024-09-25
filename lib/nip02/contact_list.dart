@@ -7,10 +7,13 @@ class ContactList {
 
   late Map<String, int> _followedCommunitys;
 
+  late int createdAt;
+
   ContactList({
     Map<String, Contact>? contacts,
     Map<String, int>? followedTags,
     Map<String, int>? followedCommunitys,
+    int? createdAt,
   }) {
     contacts ??= {};
     followedTags ??= {};
@@ -19,6 +22,9 @@ class ContactList {
     _contacts = contacts;
     _followedTags = followedTags;
     _followedCommunitys = followedCommunitys;
+
+    createdAt ??= DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    this.createdAt = createdAt;
   }
 
   static void getContactInfoFromTags(
@@ -42,8 +48,11 @@ class ContactList {
         if (length > 3) {
           petname = tag[3];
         }
-        final contact = Contact(publicKey: tag[1], url: url, petname: petname);
-        _contacts[contact.publicKey] = contact;
+        try {
+          final contact =
+              Contact(publicKey: tag[1], url: url, petname: petname);
+          _contacts[contact.publicKey] = contact;
+        } catch (e) {}
       } else if (t == "t" && length > 1) {
         var tagName = tag[1];
         _followedTags[tagName] = 1;
@@ -54,15 +63,17 @@ class ContactList {
     }
   }
 
-  factory ContactList.fromJson(List<dynamic> tags) {
+  factory ContactList.fromJson(List<dynamic> tags, int createdAt) {
     Map<String, Contact> _contacts = {};
     Map<String, int> _followedTags = {};
     Map<String, int> _followedCommunitys = {};
     getContactInfoFromTags(tags, _contacts, _followedTags, _followedCommunitys);
-    return ContactList._(_contacts, _followedTags, _followedCommunitys);
+    return ContactList._(
+        _contacts, _followedTags, _followedCommunitys, createdAt);
   }
 
-  ContactList._(this._contacts, this._followedTags, this._followedCommunitys);
+  ContactList._(this._contacts, this._followedTags, this._followedCommunitys,
+      this.createdAt);
 
   List<dynamic> toJson() {
     List<dynamic> result = [];
