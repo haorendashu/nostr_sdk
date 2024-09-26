@@ -297,10 +297,27 @@ class RelayLocalDB {
     return query;
   }
 
-  Future<List<Map<String, Object?>>> queryEventByPubkey(String pubkey) async {
+  Future<List<Map<String, Object?>>> queryEventByPubkey(String pubkey,
+      {List<int>? eventKinds}) async {
+    String kindsStr = "";
+    if (eventKinds != null && eventKinds.isNotEmpty) {
+      var length = eventKinds.length;
+      for (var i = 0; i < length; i++) {
+        kindsStr += "?";
+        if (i < length - 1) {
+          kindsStr += ",";
+        }
+      }
+
+      kindsStr = " and kind in ($kindsStr) ";
+    }
+
     var sql =
-        "SELECT id, pubkey, created_at, kind, tags, content, sig, sources FROM event WHERE pubkey = ? ORDER BY created_at DESC";
+        "SELECT id, pubkey, created_at, kind, tags, content, sig, sources FROM event WHERE pubkey = ? $kindsStr ORDER BY created_at DESC";
     List<dynamic> params = [pubkey];
+    if (eventKinds != null && eventKinds.isNotEmpty) {
+      params.addAll(eventKinds);
+    }
     var rawEvents = await _database.rawQuery(sql, params);
     var events = _handleEventMaps(rawEvents);
     return events;
