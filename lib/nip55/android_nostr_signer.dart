@@ -1,9 +1,10 @@
 import 'dart:convert';
 
+import 'package:android_content_provider/android_content_provider.dart';
+import 'package:nostr_sdk/utils/string_util.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../android_plugin/android_plugin.dart';
-import '../android_plugin/android_plugin_activity_result.dart';
 import '../android_plugin/android_plugin_intent.dart';
 import '../event.dart';
 import '../nip19/nip19.dart';
@@ -21,8 +22,17 @@ class AndroidNostrSigner implements NostrSigner {
     return false;
   }
 
-  static String getPubkey(String key) {
+  static String getPubkeyFromKey(String key) {
     var strs = key.split(":");
+    if (strs.length >= 2) {
+      return strs[1].split("?")[0];
+    }
+
+    return key;
+  }
+
+  static String? getPackageFromKey(String key) {
+    var strs = key.split("package=");
     if (strs.length >= 2) {
       return strs[1];
     }
@@ -30,8 +40,9 @@ class AndroidNostrSigner implements NostrSigner {
     return key;
   }
 
-  AndroidNostrSigner({String? pubkey}) {
+  AndroidNostrSigner({String? pubkey, String? package}) {
     _pubkey = pubkey;
+    _package = package;
     if (pubkey != null) {
       _npub = Nip19.encodePubKey(pubkey);
     }
@@ -45,10 +56,34 @@ class AndroidNostrSigner implements NostrSigner {
 
   String? _npub;
 
-  @override
-  Future<String?> decrypt(pubkey, ciphertext) async {
+  String? _package;
+
+  String? getPackage() {
+    return _package;
+  }
+
+  AndroidPluginIntent _genIntent() {
     var intent = AndroidPluginIntent();
     intent.setAction(ACTION_VIEW);
+    if (StringUtil.isNotBlank(_package)) {
+      intent.setPackage(_package!);
+    }
+
+    return intent;
+  }
+
+  @override
+  Future<String?> decrypt(pubkey, ciphertext) async {
+    var queryResult = await _contentResolverQuery(
+        "NIP04_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
+    if (queryResult != null &&
+        queryResult.isNotEmpty &&
+        queryResult[0] != null &&
+        queryResult[0] is String) {
+      return queryResult[0] as String;
+    }
+
+    var intent = _genIntent();
     intent.setData("$URI_PRE:$ciphertext");
 
     intent.putExtra("type", "nip04_decrypt");
@@ -73,8 +108,16 @@ class AndroidNostrSigner implements NostrSigner {
 
   @override
   Future<String?> encrypt(pubkey, plaintext) async {
-    var intent = AndroidPluginIntent();
-    intent.setAction(ACTION_VIEW);
+    var queryResult = await _contentResolverQuery(
+        "NIP04_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
+    if (queryResult != null &&
+        queryResult.isNotEmpty &&
+        queryResult[0] != null &&
+        queryResult[0] is String) {
+      return queryResult[0] as String;
+    }
+
+    var intent = _genIntent();
     intent.setData("$URI_PRE:$plaintext");
 
     intent.putExtra("type", "nip04_encrypt");
@@ -110,8 +153,7 @@ class AndroidNostrSigner implements NostrSigner {
     permissions.add({'type': 'nip44_decrypt'});
     permissions.add({'type': 'get_public_key'});
 
-    var intent = AndroidPluginIntent();
-    intent.setAction(ACTION_VIEW);
+    var intent = _genIntent();
     intent.setData("$URI_PRE:");
 
     intent.putExtra("type", "get_public_key");
@@ -123,6 +165,9 @@ class AndroidNostrSigner implements NostrSigner {
     // }, timeout: TIMEOUT);
     var result = await AndroidPlugin.startForResult(intent);
     if (result != null) {
+      var package = result.data.getExtra("package");
+      _package = package;
+
       var signature = result.data.getExtra("signature");
       if (signature != null && signature is String) {
         if (Nip19.isPubkey(signature)) {
@@ -149,8 +194,16 @@ class AndroidNostrSigner implements NostrSigner {
 
   @override
   Future<String?> nip44Decrypt(pubkey, ciphertext) async {
-    var intent = AndroidPluginIntent();
-    intent.setAction(ACTION_VIEW);
+    var queryResult = await _contentResolverQuery(
+        "NIP44_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
+    if (queryResult != null &&
+        queryResult.isNotEmpty &&
+        queryResult[0] != null &&
+        queryResult[0] is String) {
+      return queryResult[0] as String;
+    }
+
+    var intent = _genIntent();
     intent.setData("$URI_PRE:$ciphertext");
 
     intent.putExtra("type", "nip44_decrypt");
@@ -174,8 +227,16 @@ class AndroidNostrSigner implements NostrSigner {
 
   @override
   Future<String?> nip44Encrypt(pubkey, plaintext) async {
-    var intent = AndroidPluginIntent();
-    intent.setAction(ACTION_VIEW);
+    var queryResult = await _contentResolverQuery(
+        "NIP44_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
+    if (queryResult != null &&
+        queryResult.isNotEmpty &&
+        queryResult[0] != null &&
+        queryResult[0] is String) {
+      return queryResult[0] as String;
+    }
+
+    var intent = _genIntent();
     intent.setData("$URI_PRE:$plaintext");
 
     intent.putExtra("type", "nip44_encrypt");
@@ -200,11 +261,19 @@ class AndroidNostrSigner implements NostrSigner {
   @override
   Future<Event?> signEvent(Event event) async {
     var eventMap = event.toJson();
-    eventMap.remove("sig");
     var eventJson = jsonEncode(eventMap);
 
-    var intent = AndroidPluginIntent();
-    intent.setAction(ACTION_VIEW);
+    var queryResult = await _contentResolverQuery(
+        "SIGN_EVENT", [eventJson, "", _npub!], ["signature", "event"]);
+    if (queryResult != null &&
+        queryResult.isNotEmpty &&
+        queryResult[0] != null &&
+        queryResult[0] is String) {
+      event.sig = queryResult[0] as String;
+      return event;
+    }
+
+    var intent = _genIntent();
     intent.setData("$URI_PRE:$eventJson");
 
     intent.putExtra("type", "sign_event");
@@ -225,5 +294,44 @@ class AndroidNostrSigner implements NostrSigner {
     }
 
     return null;
+  }
+
+  Future<List<Object?>?> _getValuesFromCursor(
+      NativeCursor? cursor, List<String> columnNames) async {
+    if (cursor == null || !(await cursor.moveToFirst())) {
+      return null;
+    }
+
+    var getIndexBatch = cursor.batchedGet();
+    for (var name in columnNames) {
+      getIndexBatch.getColumnIndex(name);
+    }
+    var columnIndexList = await getIndexBatch.commit();
+
+    var getValueBatch = cursor.batchedGet();
+    for (var columnIndexObj in columnIndexList) {
+      if (columnIndexObj is int) {
+        getValueBatch.getString(columnIndexObj);
+      }
+    }
+
+    return await getValueBatch.commit();
+  }
+
+  Future<List<Object?>?> _contentResolverQuery(
+      String method, List<String> args, List<String> valueNames) async {
+    if (StringUtil.isBlank(_package)) {
+      return null;
+    }
+
+    try {
+      var cursor = await AndroidContentResolver.instance
+          .query(uri: "content://$_package.$method", projection: args);
+      var values = await _getValuesFromCursor(cursor, valueNames);
+      return values;
+    } catch (e) {
+      print("contentResolverQuery exception");
+      print(e);
+    }
   }
 }
