@@ -251,6 +251,11 @@ class Nevent {
   String? author;
 
   Nevent({required this.id, this.relays, this.kind, this.author});
+
+  @override
+  String toString() {
+    return "$kind $id $author ${relays != null ? relays!.join(",") : ""}";
+  }
 }
 
 class Nrelay {

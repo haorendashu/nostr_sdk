@@ -99,6 +99,8 @@ class EventKind {
 
   static const int LONG_FORM_LINKED = 30024;
 
+  static const int LIVE_EVENT = 30311;
+
   static const int COMMUNITY_DEFINITION = 34550;
 
   static const int VIDEO_HORIZONTAL = 34235;

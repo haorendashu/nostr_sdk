@@ -8,10 +8,11 @@ import 'package:path/path.dart';
 
 import '../event.dart';
 import '../relay/event_filter.dart';
+import '../utils/later_function.dart';
 import '../utils/platform_util.dart';
 import '../utils/string_util.dart';
 
-class RelayLocalDB {
+class RelayLocalDB with LaterFunction {
   static const _VERSION = 2;
 
   static const _dbName = "local_relay.db";
@@ -143,29 +144,98 @@ class RelayLocalDB {
     await _database.execute(sql, [id, pubkey]);
   }
 
+  List<Map<String, dynamic>> penddingEventMspList = [];
+
   Future<int> addEvent(Map<String, dynamic> event) async {
     if (checkAndSetEventFromMem(event)) {
       return 0;
     }
 
+    // clone one, avoid change by others.
     event = Map.from(event);
-    var tags = event["tags"];
-    if (tags != null) {
-      var tagsStr = jsonEncode(tags);
-      event["tags"] = tagsStr;
+    penddingEventMspList.add(event);
+    later(_batchAddEvents);
+
+    return 0;
+  }
+
+  Future<void> _batchAddEvents() async {
+    var eventMapList = penddingEventMspList;
+    penddingEventMspList = [];
+
+    // check if exist
+    List<String> ids = [];
+    for (var eventMap in eventMapList) {
+      var id = eventMap["id"];
+      if (StringUtil.isNotBlank(id)) {
+        ids.add(id);
+      }
     }
-    var sources = event["sources"];
-    if (sources != null) {
-      var sourcesStr = jsonEncode(sources);
-      event["sources"] = sourcesStr;
+    var existEventMapList = await doQueryEvent({"ids": ids, "limit": 10000});
+    Map<Object, int> existIdMap = {};
+    for (var existEventMap in existEventMapList) {
+      var id = existEventMap["id"];
+      if (id != null) {
+        existIdMap[id] = 1;
+      }
     }
-    try {
-      return await _database.insert("event", event);
-    } catch (e) {
-      // print(e);
-      return 0;
+
+    // not exist list
+    List<Map<String, dynamic>> notExistEventMapList = [];
+    for (var event in eventMapList) {
+      var id = event["id"];
+      if (StringUtil.isNotBlank(id) && existIdMap[id] == null) {
+        // event not exist!!!
+
+        // handle event info
+        var tags = event["tags"];
+        if (tags != null) {
+          var tagsStr = jsonEncode(tags);
+          event["tags"] = tagsStr;
+        }
+        var sources = event["sources"];
+        if (sources != null) {
+          var sourcesStr = jsonEncode(sources);
+          event["sources"] = sourcesStr;
+        }
+
+        notExistEventMapList.add(event);
+      }
+    }
+
+    if (notExistEventMapList.isNotEmpty) {
+      try {
+        var batch = _database.batch();
+        for (var event in notExistEventMapList) {
+          batch.insert("event", event);
+        }
+        batch.commit();
+        // print("batch insert ${notExistEventMapList.length} events");
+      } catch (e) {
+        print(e);
+      }
     }
   }
+
+  // Future<int> _doAddEvent(Map<String, dynamic> event) async {
+  //   event = Map.from(event);
+  //   var tags = event["tags"];
+  //   if (tags != null) {
+  //     var tagsStr = jsonEncode(tags);
+  //     event["tags"] = tagsStr;
+  //   }
+  //   var sources = event["sources"];
+  //   if (sources != null) {
+  //     var sourcesStr = jsonEncode(sources);
+  //     event["sources"] = sourcesStr;
+  //   }
+  //   try {
+  //     return await _database.insert("event", event);
+  //   } catch (e) {
+  //     // print(e);
+  //     return 0;
+  //   }
+  // }
 
   String makePlaceHolders(int n) {
     if (n == 1) {
@@ -179,6 +249,7 @@ class RelayLocalDB {
       Map<String, dynamic> filter) async {
     List<dynamic> params = [];
     var sql = queryEventsSql(filter, false, params);
+    // print("doQueryEvent $sql $params");
     var rawEvents = await _database.rawQuery(sql, params);
     var events = _handleEventMaps(rawEvents);
     return events;
@@ -299,6 +370,7 @@ class RelayLocalDB {
 
   Future<List<Map<String, Object?>>> queryEventByPubkey(String pubkey,
       {List<int>? eventKinds}) async {
+    // print("queryEventByPubkey $pubkey $eventKinds");
     String kindsStr = "";
     if (eventKinds != null && eventKinds.isNotEmpty) {
       var length = eventKinds.length;
