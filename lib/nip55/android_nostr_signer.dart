@@ -48,7 +48,7 @@ class AndroidNostrSigner implements NostrSigner {
     }
   }
 
-  var _lock = new Lock();
+  final _lock = Lock(reentrant: true);
 
   Duration TIMEOUT = const Duration(seconds: 300);
 
@@ -74,69 +74,65 @@ class AndroidNostrSigner implements NostrSigner {
 
   @override
   Future<String?> decrypt(pubkey, ciphertext) async {
-    var queryResult = await _contentResolverQuery(
-        "NIP04_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
-    if (queryResult != null &&
-        queryResult.isNotEmpty &&
-        queryResult[0] != null &&
-        queryResult[0] is String) {
-      return queryResult[0] as String;
-    }
-
-    var intent = _genIntent();
-    intent.setData("$URI_PRE:$ciphertext");
-
-    intent.putExtra("type", "nip04_decrypt");
-    intent.putExtra("current_user", _npub);
-    intent.putExtra("pubKey", pubkey);
-
-    // var result =
-    //     await _lock.synchronized<AndroidPluginActivityResult?>(() async {
-    //   return await AndroidPlugin.startForResult(intent);
-    // }, timeout: TIMEOUT);
-    var result = await AndroidPlugin.startForResult(intent);
-    if (result != null) {
-      var signature = result.data.getExtra("signature");
-      if (signature != null && signature is String) {
-        // print(signature);
-        return signature;
+    return _lock.synchronized(() async {
+      var queryResult = await _contentResolverQuery(
+          "NIP04_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
+      if (queryResult != null &&
+          queryResult.isNotEmpty &&
+          queryResult[0] != null &&
+          queryResult[0] is String) {
+        return queryResult[0] as String;
       }
-    }
 
-    return null;
+      var intent = _genIntent();
+      intent.setData("$URI_PRE:$ciphertext");
+
+      intent.putExtra("type", "nip04_decrypt");
+      intent.putExtra("current_user", _npub);
+      intent.putExtra("pubKey", pubkey);
+
+      var result = await AndroidPlugin.startForResult(intent);
+      if (result != null) {
+        var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          // print(signature);
+          return signature;
+        }
+      }
+
+      return null;
+    }, timeout: TIMEOUT);
   }
 
   @override
   Future<String?> encrypt(pubkey, plaintext) async {
-    var queryResult = await _contentResolverQuery(
-        "NIP04_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
-    if (queryResult != null &&
-        queryResult.isNotEmpty &&
-        queryResult[0] != null &&
-        queryResult[0] is String) {
-      return queryResult[0] as String;
-    }
-
-    var intent = _genIntent();
-    intent.setData("$URI_PRE:$plaintext");
-
-    intent.putExtra("type", "nip04_encrypt");
-    intent.putExtra("current_user", _npub);
-    intent.putExtra("pubKey", pubkey);
-
-    // var result =
-    //     await _lock.synchronized<AndroidPluginActivityResult?>(() async {
-    //   return await AndroidPlugin.startForResult(intent);
-    // }, timeout: TIMEOUT);
-    var result = await AndroidPlugin.startForResult(intent);
-    if (result != null) {
-      var signature = result.data.getExtra("signature");
-      if (signature != null && signature is String) {
-        return signature;
+    return _lock.synchronized(() async {
+      var queryResult = await _contentResolverQuery(
+          "NIP04_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
+      if (queryResult != null &&
+          queryResult.isNotEmpty &&
+          queryResult[0] != null &&
+          queryResult[0] is String) {
+        return queryResult[0] as String;
       }
-    }
 
-    return null;
+      var intent = _genIntent();
+      intent.setData("$URI_PRE:$plaintext");
+
+      intent.putExtra("type", "nip04_encrypt");
+      intent.putExtra("current_user", _npub);
+      intent.putExtra("pubKey", pubkey);
+
+      var result = await AndroidPlugin.startForResult(intent);
+      if (result != null) {
+        var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          return signature;
+        }
+      }
+
+      return null;
+    }, timeout: TIMEOUT);
   }
 
   @override
@@ -159,31 +155,29 @@ class AndroidNostrSigner implements NostrSigner {
     intent.putExtra("type", "get_public_key");
     intent.putExtra("permissions", jsonEncode(permissions));
 
-    // var result =
-    //     await _lock.synchronized<AndroidPluginActivityResult?>(() async {
-    //   return await AndroidPlugin.startForResult(intent);
-    // }, timeout: TIMEOUT);
-    var result = await AndroidPlugin.startForResult(intent);
-    if (result != null) {
-      var package = result.data.getExtra("package");
-      _package = package;
+    return _lock.synchronized(() async {
+      var result = await AndroidPlugin.startForResult(intent);
+      if (result != null) {
+        var package = result.data.getExtra("package");
+        _package = package;
 
-      var signature = result.data.getExtra("signature");
-      if (signature != null && signature is String) {
-        if (Nip19.isPubkey(signature)) {
-          // npub
-          _npub = signature;
-          _pubkey = Nip19.decode(signature);
-        } else {
-          // hex pubkey
-          _pubkey = signature;
-          _npub = Nip19.encodePubKey(signature);
+        var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          if (Nip19.isPubkey(signature)) {
+            // npub
+            _npub = signature;
+            _pubkey = Nip19.decode(signature);
+          } else {
+            // hex pubkey
+            _pubkey = signature;
+            _npub = Nip19.encodePubKey(signature);
+          }
+          return _pubkey;
         }
-        return _pubkey;
       }
-    }
 
-    return null;
+      return null;
+    }, timeout: TIMEOUT);
   }
 
   @override
@@ -194,68 +188,64 @@ class AndroidNostrSigner implements NostrSigner {
 
   @override
   Future<String?> nip44Decrypt(pubkey, ciphertext) async {
-    var queryResult = await _contentResolverQuery(
-        "NIP44_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
-    if (queryResult != null &&
-        queryResult.isNotEmpty &&
-        queryResult[0] != null &&
-        queryResult[0] is String) {
-      return queryResult[0] as String;
-    }
-
-    var intent = _genIntent();
-    intent.setData("$URI_PRE:$ciphertext");
-
-    intent.putExtra("type", "nip44_decrypt");
-    intent.putExtra("current_user", _npub);
-    intent.putExtra("pubKey", pubkey);
-
-    // var result =
-    //     await _lock.synchronized<AndroidPluginActivityResult?>(() async {
-    //   return await AndroidPlugin.startForResult(intent);
-    // }, timeout: TIMEOUT);
-    var result = await AndroidPlugin.startForResult(intent).timeout(TIMEOUT);
-    if (result != null) {
-      var signature = result.data.getExtra("signature");
-      if (signature != null && signature is String) {
-        return signature;
+    return _lock.synchronized(() async {
+      var queryResult = await _contentResolverQuery(
+          "NIP44_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
+      if (queryResult != null &&
+          queryResult.isNotEmpty &&
+          queryResult[0] != null &&
+          queryResult[0] is String) {
+        return queryResult[0] as String;
       }
-    }
 
-    return null;
+      var intent = _genIntent();
+      intent.setData("$URI_PRE:$ciphertext");
+
+      intent.putExtra("type", "nip44_decrypt");
+      intent.putExtra("current_user", _npub);
+      intent.putExtra("pubKey", pubkey);
+
+      var result = await AndroidPlugin.startForResult(intent).timeout(TIMEOUT);
+      if (result != null) {
+        var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          return signature;
+        }
+      }
+
+      return null;
+    }, timeout: TIMEOUT);
   }
 
   @override
   Future<String?> nip44Encrypt(pubkey, plaintext) async {
-    var queryResult = await _contentResolverQuery(
-        "NIP44_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
-    if (queryResult != null &&
-        queryResult.isNotEmpty &&
-        queryResult[0] != null &&
-        queryResult[0] is String) {
-      return queryResult[0] as String;
-    }
-
-    var intent = _genIntent();
-    intent.setData("$URI_PRE:$plaintext");
-
-    intent.putExtra("type", "nip44_encrypt");
-    intent.putExtra("current_user", _npub);
-    intent.putExtra("pubKey", pubkey);
-
-    // var result =
-    //     await _lock.synchronized<AndroidPluginActivityResult?>(() async {
-    //   return await AndroidPlugin.startForResult(intent);
-    // }, timeout: TIMEOUT);
-    var result = await AndroidPlugin.startForResult(intent);
-    if (result != null) {
-      var signature = result.data.getExtra("signature");
-      if (signature != null && signature is String) {
-        return signature;
+    return _lock.synchronized(() async {
+      var queryResult = await _contentResolverQuery(
+          "NIP44_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
+      if (queryResult != null &&
+          queryResult.isNotEmpty &&
+          queryResult[0] != null &&
+          queryResult[0] is String) {
+        return queryResult[0] as String;
       }
-    }
 
-    return null;
+      var intent = _genIntent();
+      intent.setData("$URI_PRE:$plaintext");
+
+      intent.putExtra("type", "nip44_encrypt");
+      intent.putExtra("current_user", _npub);
+      intent.putExtra("pubKey", pubkey);
+
+      var result = await AndroidPlugin.startForResult(intent);
+      if (result != null) {
+        var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          return signature;
+        }
+      }
+
+      return null;
+    }, timeout: TIMEOUT);
   }
 
   @override
@@ -263,37 +253,35 @@ class AndroidNostrSigner implements NostrSigner {
     var eventMap = event.toJson();
     var eventJson = jsonEncode(eventMap);
 
-    var queryResult = await _contentResolverQuery(
-        "SIGN_EVENT", [eventJson, "", _npub!], ["signature", "event"]);
-    if (queryResult != null &&
-        queryResult.isNotEmpty &&
-        queryResult[0] != null &&
-        queryResult[0] is String) {
-      event.sig = queryResult[0] as String;
-      return event;
-    }
-
-    var intent = _genIntent();
-    intent.setData("$URI_PRE:$eventJson");
-
-    intent.putExtra("type", "sign_event");
-    intent.putExtra("current_user", _npub);
-    intent.putExtra("id", event.id);
-
-    // var result =
-    //     await _lock.synchronized<AndroidPluginActivityResult?>(() async {
-    //   return await AndroidPlugin.startForResult(intent);
-    // }, timeout: TIMEOUT);
-    var result = await AndroidPlugin.startForResult(intent);
-    if (result != null) {
-      var signature = result.data.getExtra("signature");
-      if (signature != null && signature is String) {
-        event.sig = signature;
+    return _lock.synchronized(() async {
+      var queryResult = await _contentResolverQuery(
+          "SIGN_EVENT", [eventJson, "", _npub!], ["signature", "event"]);
+      if (queryResult != null &&
+          queryResult.isNotEmpty &&
+          queryResult[0] != null &&
+          queryResult[0] is String) {
+        event.sig = queryResult[0] as String;
         return event;
       }
-    }
 
-    return null;
+      var intent = _genIntent();
+      intent.setData("$URI_PRE:$eventJson");
+
+      intent.putExtra("type", "sign_event");
+      intent.putExtra("current_user", _npub);
+      intent.putExtra("id", event.id);
+
+      var result = await AndroidPlugin.startForResult(intent);
+      if (result != null) {
+        var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          event.sig = signature;
+          return event;
+        }
+      }
+
+      return null;
+    }, timeout: TIMEOUT);
   }
 
   Future<List<Object?>?> _getValuesFromCursor(
