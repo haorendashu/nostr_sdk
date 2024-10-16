@@ -10,6 +10,15 @@ import '../event.dart';
 import '../nip19/nip19.dart';
 import '../signer/nostr_signer.dart';
 
+///
+/// Android Local Nostr Signer
+///
+/// Notice:
+/// havn't implement get_relays method.
+/// many methods call content_resolve_query first and than start_activity_for_result.
+/// many methods return signature field maybe later will change to result field, so client should get signature field first and try result field if signature field not exist.
+/// methods calling should be one-by-one, if they call together it will call some call in signer can't get the calling package name.
+///
 class AndroidNostrSigner implements NostrSigner {
   static const String URI_PRE = "nostrsigner";
 
@@ -75,8 +84,9 @@ class AndroidNostrSigner implements NostrSigner {
   @override
   Future<String?> decrypt(pubkey, ciphertext) async {
     return _lock.synchronized(() async {
-      var queryResult = await _contentResolverQuery(
-          "NIP04_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
+      var queryResult = await _contentResolverQuery("NIP04_DECRYPT",
+          [ciphertext, pubkey, _npub!], ["signature", "result"]);
+      // print(queryResult);
       if (queryResult != null &&
           queryResult.isNotEmpty &&
           queryResult[0] != null &&
@@ -95,7 +105,11 @@ class AndroidNostrSigner implements NostrSigner {
       if (result != null) {
         var signature = result.data.getExtra("signature");
         if (signature != null && signature is String) {
-          // print(signature);
+          return signature;
+        }
+
+        signature = result.data.getExtra("result");
+        if (signature != null && signature is String) {
           return signature;
         }
       }
@@ -107,8 +121,9 @@ class AndroidNostrSigner implements NostrSigner {
   @override
   Future<String?> encrypt(pubkey, plaintext) async {
     return _lock.synchronized(() async {
-      var queryResult = await _contentResolverQuery(
-          "NIP04_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
+      var queryResult = await _contentResolverQuery("NIP04_ENCRYPT",
+          [plaintext, pubkey, _npub!], ["signature", "result"]);
+      // print(queryResult);
       if (queryResult != null &&
           queryResult.isNotEmpty &&
           queryResult[0] != null &&
@@ -126,6 +141,11 @@ class AndroidNostrSigner implements NostrSigner {
       var result = await AndroidPlugin.startForResult(intent);
       if (result != null) {
         var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          return signature;
+        }
+
+        signature = result.data.getExtra("result");
         if (signature != null && signature is String) {
           return signature;
         }
@@ -189,8 +209,9 @@ class AndroidNostrSigner implements NostrSigner {
   @override
   Future<String?> nip44Decrypt(pubkey, ciphertext) async {
     return _lock.synchronized(() async {
-      var queryResult = await _contentResolverQuery(
-          "NIP44_DECRYPT", [ciphertext, pubkey, _npub!], ["signature"]);
+      var queryResult = await _contentResolverQuery("NIP44_DECRYPT",
+          [ciphertext, pubkey, _npub!], ["signature", "result"]);
+      // print(queryResult);
       if (queryResult != null &&
           queryResult.isNotEmpty &&
           queryResult[0] != null &&
@@ -211,6 +232,11 @@ class AndroidNostrSigner implements NostrSigner {
         if (signature != null && signature is String) {
           return signature;
         }
+
+        signature = result.data.getExtra("result");
+        if (signature != null && signature is String) {
+          return signature;
+        }
       }
 
       return null;
@@ -220,8 +246,9 @@ class AndroidNostrSigner implements NostrSigner {
   @override
   Future<String?> nip44Encrypt(pubkey, plaintext) async {
     return _lock.synchronized(() async {
-      var queryResult = await _contentResolverQuery(
-          "NIP44_ENCRYPT", [plaintext, pubkey, _npub!], ["signature"]);
+      var queryResult = await _contentResolverQuery("NIP44_ENCRYPT",
+          [plaintext, pubkey, _npub!], ["signature", "result"]);
+      // print(queryResult);
       if (queryResult != null &&
           queryResult.isNotEmpty &&
           queryResult[0] != null &&
@@ -242,6 +269,11 @@ class AndroidNostrSigner implements NostrSigner {
         if (signature != null && signature is String) {
           return signature;
         }
+
+        signature = result.data.getExtra("result");
+        if (signature != null && signature is String) {
+          return signature;
+        }
       }
 
       return null;
@@ -254,8 +286,8 @@ class AndroidNostrSigner implements NostrSigner {
     var eventJson = jsonEncode(eventMap);
 
     return _lock.synchronized(() async {
-      var queryResult = await _contentResolverQuery(
-          "SIGN_EVENT", [eventJson, "", _npub!], ["signature", "event"]);
+      var queryResult = await _contentResolverQuery("SIGN_EVENT",
+          [eventJson, "", _npub!], ["signature", "result", "event"]);
       if (queryResult != null &&
           queryResult.isNotEmpty &&
           queryResult[0] != null &&
@@ -274,6 +306,12 @@ class AndroidNostrSigner implements NostrSigner {
       var result = await AndroidPlugin.startForResult(intent);
       if (result != null) {
         var signature = result.data.getExtra("signature");
+        if (signature != null && signature is String) {
+          event.sig = signature;
+          return event;
+        }
+
+        signature = result.data.getExtra("result");
         if (signature != null && signature is String) {
           event.sig = signature;
           return event;
