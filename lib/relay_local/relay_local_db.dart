@@ -88,19 +88,6 @@ class RelayLocalDB with LaterFunction {
     }
   }
 
-  Future<Event?> queryById(String id) async {
-    var sql =
-        "SELECT id, pubkey, created_at, kind, tags, content, sig, sources FROM event WHERE id = ?";
-    // print("queryById $id");
-    List<dynamic> params = [id];
-    var rawEvents = await _database.rawQuery(sql, params);
-    var events = _loadEventFromRawEvents(rawEvents);
-    if (events.isNotEmpty) {
-      return events.first;
-    }
-    return null;
-  }
-
   List<Event> _loadEventFromRawEvents(List<Map<String, Object?>> rawEvents) {
     rawEvents = _handleEventMaps(rawEvents);
     return loadEventFromMaps(rawEvents);

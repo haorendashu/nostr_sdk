@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'client_utils/keys.dart';
 import 'event.dart';
 import 'event_kind.dart';
+import 'event_mem_box.dart';
 import 'nip02/contact_list.dart';
 import 'relay/event_filter.dart';
 import 'relay/relay.dart';
 import 'relay/relay_pool.dart';
+import 'relay/relay_type.dart';
 import 'signer/nostr_signer.dart';
 import 'signer/pubkey_only_nostr_signer.dart';
 import 'utils/string_util.dart';
@@ -156,14 +160,38 @@ class Nostr {
     _pool.unsubscribe(id);
   }
 
+  Future<List<Event>> queryEvents(
+    List<Map<String, dynamic>> filters, {
+    String? id,
+    List<String>? tempRelays,
+    List<int> relayTypes = RelayType.ALL,
+    bool sendAfterAuth = false,
+    bool? runBeforeConnected,
+  }) async {
+    var eventBox = EventMemBox(sortAfterAdd: false);
+    var completer = Completer();
+
+    query(filters,
+        id: id,
+        tempRelays: tempRelays,
+        sendAfterAuth: sendAfterAuth,
+        runBeforeConnected: runBeforeConnected, (event) {
+      eventBox.add(event);
+    }, onComplete: () {
+      completer.complete();
+    });
+
+    await completer.future;
+    return eventBox.all();
+  }
+
   String query(
     List<Map<String, dynamic>> filters,
     Function(Event) onEvent, {
     String? id,
     Function? onComplete,
     List<String>? tempRelays,
-    bool onlyTempRelays = false,
-    bool queryLocal = true,
+    List<int> relayTypes = RelayType.ALL,
     bool sendAfterAuth = false,
     bool? runBeforeConnected,
   }) {
@@ -173,8 +201,6 @@ class Nostr {
       id: id,
       onComplete: onComplete,
       tempRelays: tempRelays,
-      onlyTempRelays: onlyTempRelays,
-      queryLocal: queryLocal,
       sendAfterAuth: sendAfterAuth,
       runBeforeConnected: runBeforeConnected,
     );
@@ -191,12 +217,14 @@ class Nostr {
     Relay relay, {
     bool autoSubscribe = false,
     bool init = false,
+    int relayType = RelayType.NORMAL,
   }) async {
-    return await _pool.add(relay, autoSubscribe: autoSubscribe, init: init);
+    return await _pool.add(relay,
+        autoSubscribe: autoSubscribe, init: init, relayType: relayType);
   }
 
-  void removeRelay(String url) {
-    _pool.remove(url);
+  void removeRelay(String url, {int relayType = RelayType.NORMAL}) {
+    _pool.remove(url, relayType: relayType);
   }
 
   List<Relay> activeRelays() {

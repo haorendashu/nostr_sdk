@@ -1,13 +1,19 @@
 import 'client_connected.dart';
+import 'relay_type.dart';
 
 class RelayStatus {
+  int relayType;
+
   String addr;
 
   bool writeAccess;
 
   bool readAccess;
 
-  RelayStatus(this.addr, {this.writeAccess = true, this.readAccess = true});
+  RelayStatus(this.addr,
+      {this.relayType = RelayType.NORMAL,
+      this.writeAccess = true,
+      this.readAccess = true});
 
   int connected = ClientConneccted.UN_CONNECT;
 

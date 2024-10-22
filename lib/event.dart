@@ -72,8 +72,8 @@ class Event {
   /// Relay that an event was received from.
   List<String> sources = [];
 
-  /// whether this event is from local relay.
-  bool localEvent = false;
+  /// whether this event is from cache relay.
+  bool cacheEvent = false;
 
   /// Returns the Event object as a JSON object
   Map<String, dynamic> toJson() {
