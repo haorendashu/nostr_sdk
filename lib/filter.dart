@@ -1,3 +1,5 @@
+import 'package:nostr_sdk/event.dart';
+
 /// filter is a JSON object that determines what events will be sent in that subscription
 class Filter {
   /// a list of event ids or prefixes
@@ -76,5 +78,54 @@ class Filter {
       data['limit'] = limit;
     }
     return data;
+  }
+
+  bool checkEvent(Event event) {
+    if (ids != null && (!ids!.contains(event.id))) {
+      return false;
+    }
+    if (authors != null && (!authors!.contains(event.pubkey))) {
+      return false;
+    }
+    if (kinds != null && (!kinds!.contains(event.kind))) {
+      return false;
+    }
+    if (since != null && since! > event.createdAt) {
+      return false;
+    }
+    if (until != null && until! < event.createdAt) {
+      return false;
+    }
+
+    List<String> es = [];
+    List<String> ps = [];
+    for (var tag in event.tags) {
+      if (tag is List && tag.length > 1) {
+        var k = tag[0];
+        var v = tag[1];
+
+        if (k == "e") {
+          es.add(v);
+        } else if (k == "p") {
+          ps.add(v);
+        }
+      }
+    }
+    if (e != null &&
+        (!(es.any((v) {
+          return e!.contains(v);
+        })))) {
+      // filter query e but es don't contains e.
+      return false;
+    }
+    if (p != null &&
+        (!(ps.any((v) {
+          return p!.contains(v);
+        })))) {
+      // filter query p but ps don't contains p.
+      return false;
+    }
+
+    return true;
   }
 }
