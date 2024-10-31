@@ -44,7 +44,7 @@ mixin RelayLocalMixin {
 
   Future<void> doReq(String? connId, List message) async {
     if (message.length > 2) {
-      var subsctionId = message[1];
+      var subscriptionId = message[1];
 
       for (var i = 2; i < message.length; i++) {
         var filter = message[i];
@@ -52,25 +52,25 @@ mixin RelayLocalMixin {
         var events = await getRelayLocalDB().doQueryEvent(filter);
         for (var event in events) {
           // send callback
-          callback(connId, ["EVENT", subsctionId, event]);
+          callback(connId, ["EVENT", subscriptionId, event]);
         }
       }
 
       // query complete, send callback
-      callback(connId, ["EOSE", subsctionId]);
+      callback(connId, ["EOSE", subscriptionId]);
     }
   }
 
   Future<void> doCount(String? connId, List message) async {
     if (message.length > 2) {
-      var subsctionId = message[1];
+      var subscriptionId = message[1];
       var filter = message[2];
       var count = await getRelayLocalDB().doQueryCount(filter);
 
       // send callback
       callback(connId, [
         "COUNT",
-        subsctionId,
+        subscriptionId,
         {"count": count}
       ]);
     }
