@@ -166,16 +166,12 @@ class Nostr {
     List<String>? tempRelays,
     List<int> relayTypes = RelayType.ALL,
     bool sendAfterAuth = false,
-    bool? runBeforeConnected,
   }) async {
     var eventBox = EventMemBox(sortAfterAdd: false);
     var completer = Completer();
 
-    query(filters,
-        id: id,
-        tempRelays: tempRelays,
-        sendAfterAuth: sendAfterAuth,
-        runBeforeConnected: runBeforeConnected, (event) {
+    query(filters, id: id, tempRelays: tempRelays, sendAfterAuth: sendAfterAuth,
+        (event) {
       eventBox.add(event);
     }, onComplete: () {
       completer.complete();
@@ -193,7 +189,6 @@ class Nostr {
     List<String>? tempRelays,
     List<int> relayTypes = RelayType.ALL,
     bool sendAfterAuth = false,
-    bool? runBeforeConnected,
   }) {
     return _pool.query(
       filters,
@@ -202,7 +197,6 @@ class Nostr {
       onComplete: onComplete,
       tempRelays: tempRelays,
       sendAfterAuth: sendAfterAuth,
-      runBeforeConnected: runBeforeConnected,
     );
   }
 

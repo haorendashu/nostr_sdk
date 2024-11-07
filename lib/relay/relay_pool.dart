@@ -385,7 +385,6 @@ class RelayPool {
     List<int> relayTypes = RelayType.ALL,
     bool sendAfterAuth =
         false, // if relay not connected, it will send after auth
-    bool? runBeforeConnected,
   }) {
     if (filters.isEmpty) {
       throw ArgumentError("No filters given", "filters");
