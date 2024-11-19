@@ -5,8 +5,8 @@ import '../event_kind.dart';
 import 'group_identifier.dart';
 
 class NIP29 {
-  static void deleteEvent(
-      Nostr nostr, GroupIdentifier groupIdentifier, String eventId) {
+  static Future<void> deleteEvent(
+      Nostr nostr, GroupIdentifier groupIdentifier, String eventId) async {
     var relays = [groupIdentifier.host];
     var event = Event(
         nostr.publicKey,
@@ -16,11 +16,11 @@ class NIP29 {
           ["e", eventId]
         ],
         "");
-    nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
+    await nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
   }
 
-  static void editStatus(
-      Nostr nostr, GroupIdentifier groupIdentifier, bool? public, bool? open) {
+  static Future<void> editStatus(Nostr nostr, GroupIdentifier groupIdentifier,
+      bool? public, bool? open) async {
     if (public == null && open == null) {
       return;
     }
@@ -43,8 +43,8 @@ class NIP29 {
     }
 
     var relays = [groupIdentifier.host];
-    var event = Event(nostr!.publicKey, EventKind.GROUP_EDIT_STATUS, tags, "");
-    nostr!.sendEvent(event, tempRelays: relays, targetRelays: relays);
+    var event = Event(nostr.publicKey, EventKind.GROUP_EDIT_STATUS, tags, "");
+    await nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
   }
 
   static Future<void> addMember(
