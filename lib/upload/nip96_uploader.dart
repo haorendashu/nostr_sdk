@@ -83,7 +83,7 @@ class NIP96Uploader {
       }
       var nip98Event = Event(nostr!.publicKey, EventKind.HTTP_AUTH, tags, "");
 
-      nostr!.signEvent(nip98Event);
+      await nostr!.signEvent(nip98Event);
       // log(jsonEncode(nip98Event.toJson()));
       headers["Authorization"] =
           "Nostr ${base64Url.encode(utf8.encode(jsonEncode(nip98Event.toJson())))}";
@@ -92,6 +92,7 @@ class NIP96Uploader {
     }
 
     var formData = FormData.fromMap({"file": multipartFile});
+    // log(formData.toString());
     try {
       var response = await dio.post(sa.apiUrl!,
           data: formData,
