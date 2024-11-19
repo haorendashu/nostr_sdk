@@ -54,6 +54,8 @@ class GroupMetadata extends GroupObject {
             picture = value;
           } else if (key == "about") {
             about = value;
+          } else if (key == "h") {
+            groupId = value;
           }
         }
       }
