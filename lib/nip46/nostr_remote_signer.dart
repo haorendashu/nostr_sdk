@@ -36,7 +36,7 @@ class NostrRemoteSigner extends NostrSigner {
   Map<String, Completer<String?>> callbacks = {};
 
   Future<void> connect() async {
-    if (StringUtil.isNotBlank(info.nsec)) {
+    if (StringUtil.isBlank(info.nsec)) {
       return;
     }
 
@@ -48,19 +48,27 @@ class NostrRemoteSigner extends NostrSigner {
     }
 
     var request = NostrRemoteRequest("connect", [
-      info.remoteUserPubkey,
+      info.remoteSignerPubkey,
       info.optionalSecret ?? "",
       "sign_event,get_relays,get_public_key,nip04_encrypt,nip04_decrypt,nip44_encrypt,nip44_decrypt"
     ]);
     // send connect but not await this request.
-    sendAndWaitForResult(request);
+    await sendAndWaitForResult(request, timeout: 300);
+  }
+
+  Future<String?> pullPubkey() async {
+    var request = NostrRemoteRequest("get_public_key", []);
+    // send connect but not await this request.
+    var pubkey = await sendAndWaitForResult(request);
+    info.userPubkey = pubkey;
+    return pubkey;
   }
 
   Future<void> onMessage(Relay relay, List<dynamic> json) async {
     final messageType = json[0];
     if (messageType == 'EVENT') {
       try {
-        // print(jsonEncode(json[2]));
+        // print("return ${jsonEncode(json[2])}");
         // add some statistics
         relay.relayStatus.noteReceive();
 
@@ -69,18 +77,6 @@ class NostrRemoteSigner extends NostrSigner {
           var response = await NostrRemoteResponse.decrypt(
               event.content, localNostrSigner, event.pubkey);
           if (response != null) {
-            // don't display here, need user to tap the auth on it's signer app.
-            // if (response.result == "auth_url" &&
-            //     StringUtil.isNotBlank(response.error)) {
-            //   BotToast.showSimpleNotification(
-            //       title:
-            //           "Tap and copy this to link to auth permissions: \n ${response.error}",
-            //       onTap: () {
-            //         Clipboard.setData(ClipboardData(text: response.error!))
-            //             .then((_) {});
-            //       },
-            //       duration: const Duration(seconds: 30));
-            // }
             var completer = callbacks.remove(response.id);
             if (completer != null) {
               // print("result ${response.result}");
@@ -150,13 +146,14 @@ class NostrRemoteSigner extends NostrSigner {
     return queryMsg;
   }
 
-  Future<String?> sendAndWaitForResult(NostrRemoteRequest request) async {
+  Future<String?> sendAndWaitForResult(NostrRemoteRequest request,
+      {int timeout = 60}) async {
     var senderPubkey = await localNostrSigner.getPublicKey();
     var content =
-        await request.encrypt(localNostrSigner, info.remoteUserPubkey);
+        await request.encrypt(localNostrSigner, info.remoteSignerPubkey);
     if (StringUtil.isNotBlank(senderPubkey) && content != null) {
       Event? event = Event(senderPubkey!, EventKind.NOSTR_REMOTE_SIGNING,
-          [getRemotePubkeyTags()], content);
+          [getRemoteSignerPubkeyTags()], content);
       event = await localNostrSigner.signEvent(event);
       if (event != null) {
         var json = ["EVENT", event.toJson()];
@@ -170,7 +167,7 @@ class NostrRemoteSigner extends NostrSigner {
           relay.send(json, forceSend: true);
         }
 
-        return await completer.future.timeout(const Duration(seconds: 60));
+        return await completer.future.timeout(Duration(seconds: timeout));
       }
     }
     return null;
@@ -190,7 +187,7 @@ class NostrRemoteSigner extends NostrSigner {
 
   @override
   Future<String?> getPublicKey() async {
-    return info.remoteUserPubkey;
+    return info.userPubkey;
   }
 
   @override
@@ -238,8 +235,8 @@ class NostrRemoteSigner extends NostrSigner {
 
   List<String>? _remotePubkeyTags;
 
-  List<String> getRemotePubkeyTags() {
-    _remotePubkeyTags ??= ["p", info.remoteUserPubkey];
+  List<String> getRemoteSignerPubkeyTags() {
+    _remotePubkeyTags ??= ["p", info.remoteSignerPubkey];
     return _remotePubkeyTags!;
   }
 }

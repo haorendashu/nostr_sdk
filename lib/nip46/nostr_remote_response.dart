@@ -16,7 +16,7 @@ class NostrRemoteResponse {
       String ciphertext, NostrSigner signer, String pubkey) async {
     var plaintext = await signer.decrypt(pubkey, ciphertext);
     if (StringUtil.isNotBlank(plaintext)) {
-      // print(plaintext);
+      // print("plaintext $plaintext");
       var jsonMap = jsonDecode(plaintext!);
 
       var id = jsonMap["id"];

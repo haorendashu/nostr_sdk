@@ -4,20 +4,24 @@ import '../utils/string_util.dart';
 
 /// This client is designed for nostr client.
 class NostrRemoteSignerInfo {
-  String remoteUserPubkey;
+  String remoteSignerPubkey;
 
   List<String> relays;
 
   String? optionalSecret;
 
-  // RemoteSignerKey nsec, sometime need to save all info in one place, so nsec should save as a par here.
+  // Client signer nsec, sometime need to save all info in one place, so nsec should save as a par here.
   String? nsec;
 
+  // User Pubkey, sometime need to save all info in one place, so nsec should save as a par here.
+  String? userPubkey;
+
   NostrRemoteSignerInfo({
-    required this.remoteUserPubkey,
+    required this.remoteSignerPubkey,
     required this.relays,
     this.optionalSecret,
     this.nsec,
+    this.userPubkey,
   });
 
   @override
@@ -28,10 +32,13 @@ class NostrRemoteSignerInfo {
     if (nsec != null) {
       pars["nsec"] = nsec;
     }
+    if (userPubkey != null) {
+      pars["userPubkey"] = userPubkey;
+    }
 
     var uri = Uri(
       scheme: "bunker",
-      host: remoteUserPubkey,
+      host: remoteSignerPubkey,
       queryParameters: pars,
     );
 
@@ -52,7 +59,7 @@ class NostrRemoteSignerInfo {
 
     var pars = uri.queryParametersAll;
 
-    var remoteUserPubkey = uri.host;
+    var remoteSignerPubkey = uri.host;
 
     var relays = pars["relay"];
     if (relays == null || relays.isEmpty) {
@@ -74,7 +81,7 @@ class NostrRemoteSignerInfo {
     }
 
     return NostrRemoteSignerInfo(
-      remoteUserPubkey: remoteUserPubkey,
+      remoteSignerPubkey: remoteSignerPubkey,
       relays: relays,
       optionalSecret: optionalSecret,
       nsec: nsec!,
