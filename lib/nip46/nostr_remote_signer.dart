@@ -35,7 +35,7 @@ class NostrRemoteSigner extends NostrSigner {
 
   Map<String, Completer<String?>> callbacks = {};
 
-  Future<void> connect() async {
+  Future<void> connect({bool sendConnectRequest = true}) async {
     if (StringUtil.isBlank(info.nsec)) {
       return;
     }
@@ -47,19 +47,22 @@ class NostrRemoteSigner extends NostrSigner {
       relays.add(relay);
     }
 
-    var request = NostrRemoteRequest("connect", [
-      info.remoteSignerPubkey,
-      info.optionalSecret ?? "",
-      "sign_event,get_relays,get_public_key,nip04_encrypt,nip04_decrypt,nip44_encrypt,nip44_decrypt"
-    ]);
-    // send connect but not await this request.
-    await sendAndWaitForResult(request, timeout: 300);
+    if (sendConnectRequest) {
+      var request = NostrRemoteRequest("connect", [
+        info.remoteSignerPubkey,
+        info.optionalSecret ?? "",
+        "sign_event,get_relays,get_public_key,nip04_encrypt,nip04_decrypt,nip44_encrypt,nip44_decrypt"
+      ]);
+      // send connect but not await this request.
+      await sendAndWaitForResult(request, timeout: 300);
+    }
   }
 
   Future<String?> pullPubkey() async {
     var request = NostrRemoteRequest("get_public_key", []);
     // send connect but not await this request.
-    var pubkey = await sendAndWaitForResult(request);
+    var pubkey = await sendAndWaitForResult(request, timeout: 300);
+    // print("pullPubkey result $pubkey");
     info.userPubkey = pubkey;
     return pubkey;
   }

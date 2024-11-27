@@ -80,11 +80,18 @@ class NostrRemoteSignerInfo {
       }
     }
 
+    var userPubkeys = pars["userPubkey"];
+    String? userPubkey;
+    if (userPubkeys != null && userPubkeys.isNotEmpty) {
+      userPubkey = userPubkeys.first;
+    }
+
     return NostrRemoteSignerInfo(
       remoteSignerPubkey: remoteSignerPubkey,
       relays: relays,
       optionalSecret: optionalSecret,
       nsec: nsec!,
+      userPubkey: userPubkey,
     );
   }
 }

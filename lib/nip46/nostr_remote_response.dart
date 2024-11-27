@@ -41,4 +41,9 @@ class NostrRemoteResponse {
     var jsonStr = jsonEncode(jsonMap);
     return await signer.encrypt(pubkey, jsonStr);
   }
+
+  @override
+  String toString() {
+    return "$id $result $error";
+  }
 }
