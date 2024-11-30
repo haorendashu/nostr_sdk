@@ -54,14 +54,14 @@ class NostrRemoteSigner extends NostrSigner {
         "sign_event,get_relays,get_public_key,nip04_encrypt,nip04_decrypt,nip44_encrypt,nip44_decrypt"
       ]);
       // send connect but not await this request.
-      await sendAndWaitForResult(request, timeout: 300);
+      await sendAndWaitForResult(request, timeout: 120);
     }
   }
 
   Future<String?> pullPubkey() async {
     var request = NostrRemoteRequest("get_public_key", []);
     // send connect but not await this request.
-    var pubkey = await sendAndWaitForResult(request, timeout: 300);
+    var pubkey = await sendAndWaitForResult(request, timeout: 120);
     // print("pullPubkey result $pubkey");
     info.userPubkey = pubkey;
     return pubkey;
@@ -170,7 +170,9 @@ class NostrRemoteSigner extends NostrSigner {
           relay.send(json, forceSend: true);
         }
 
-        return await completer.future.timeout(Duration(seconds: timeout));
+        return await completer.future.timeout(Duration(seconds: timeout), onTimeout: () {
+          return null;
+        });
       }
     }
     return null;
