@@ -14,7 +14,7 @@ import '../utils/hash_util.dart';
 import '../utils/string_util.dart';
 
 // This uploader not complete.
-class BolssomUploader {
+class BlossomUploader {
   static var dio = Dio();
 
   static Future<String?> upload(Nostr nostr, String endPoint, String filePath,
@@ -109,7 +109,7 @@ class BolssomUploader {
         return body["url"];
       }
     } catch (e) {
-      print("BolssomUploader.upload upload exception:");
+      print("BlossomUploader.upload upload exception:");
       print(e);
     }
 
