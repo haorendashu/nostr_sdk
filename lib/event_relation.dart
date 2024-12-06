@@ -43,7 +43,7 @@ class EventRelation {
   Map<String, FileMetadata> fileMetadatas = {};
 
   String? get replyOrRootId {
-    return replyId != null ? replyId : rootId;
+    return replyId ?? rootId;
   }
 
   String? get replyOrRootRelayAddr {
@@ -185,16 +185,16 @@ class EventZapInfo {
   factory EventZapInfo.fromTags(List tag) {
     var pubkey = tag[1] as String;
     var relayAddr = tag[2] as String;
-    var sourceWeidght = tag[3];
+    var sourceWeight = tag[3];
     double weight = 1;
-    if (sourceWeidght is String) {
-      weight = double.parse(sourceWeidght);
-    } else if (sourceWeidght is double) {
-      weight = sourceWeidght;
-    } else if (sourceWeidght is int) {
-      weight = sourceWeidght.toDouble();
+    if (sourceWeight is String) {
+      weight = double.parse(sourceWeight);
+    } else if (sourceWeight is double) {
+      weight = sourceWeight;
+    } else if (sourceWeight is int) {
+      weight = sourceWeight.toDouble();
     }
 
-    return EventZapInfo(pubkey, relayAddr, weight!);
+    return EventZapInfo(pubkey, relayAddr, weight);
   }
 }

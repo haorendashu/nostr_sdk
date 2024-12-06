@@ -42,7 +42,7 @@ class NIP07Signer extends NostrSigner {
     }
 
     var stringResult = await nip07SignerMethodGetPublicKey();
-    if (stringResult != null && stringResult is String) {
+    if (stringResult != null) {
       _pubkey = stringResult;
     }
 

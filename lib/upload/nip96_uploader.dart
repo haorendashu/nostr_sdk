@@ -47,7 +47,7 @@ class NIP96Uploader {
       }
     }
 
-    if (bytes == null || bytes.isEmpty) {
+    if (bytes.isEmpty) {
       return null;
     }
 
@@ -81,14 +81,12 @@ class NIP96Uploader {
       if (StringUtil.isNotBlank(payload)) {
         tags.add(["payload", payload]);
       }
-      var nip98Event = Event(nostr!.publicKey, EventKind.HTTP_AUTH, tags, "");
+      var nip98Event = Event(nostr.publicKey, EventKind.HTTP_AUTH, tags, "");
 
-      await nostr!.signEvent(nip98Event);
-      // log(jsonEncode(nip98Event.toJson()));
+      await nostr.signEvent(nip98Event);
+      
       headers["Authorization"] =
           "Nostr ${base64Url.encode(utf8.encode(jsonEncode(nip98Event.toJson())))}";
-
-      // log(jsonEncode(headers));
     }
 
     var formData = FormData.fromMap({"file": multipartFile});
@@ -100,7 +98,6 @@ class NIP96Uploader {
             headers: headers,
           ));
       var body = response.data;
-      // log(jsonEncode(response.data));
       if (body is Map<String, dynamic> &&
           body["status"] == "success" &&
           body["nip94_event"] != null) {

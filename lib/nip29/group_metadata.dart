@@ -75,4 +75,16 @@ class GroupMetadata extends GroupObject {
       open: open,
     );
   }
+
+  String? get displayName {
+    if (name != null && name!.isNotEmpty) return name;
+
+    int apostropheIndex = groupId.indexOf("'");
+
+    if (apostropheIndex != -1) {
+      return groupId.substring(apostropheIndex + 1);
+    } else {
+      return null;
+    }
+  }
 }

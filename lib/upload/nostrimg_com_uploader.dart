@@ -7,7 +7,7 @@ import '../utils/base64.dart';
 import 'nostr_build_uploader.dart';
 
 class NostrimgComUploader {
-  static final String UPLOAD_ACTION = "https://nostrimg.com/api/upload";
+  static const String UPLOAD_ACTION = "https://nostrimg.com/api/upload";
 
   static Future<String?> upload(String filePath, {String? fileName}) async {
     // final dio = Dio();
