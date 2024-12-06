@@ -16,7 +16,8 @@ class NIP95Uploader {
     if (result != null) {
       // TODO Here should set relayAddrs to event.
       return NIP19Tlv.encodeNevent(
-          Nevent(id: result.id, relays: result.sources));
+          Nevent(id: result.id, relays: result.sources)
+      );
     }
 
     return null;
@@ -54,10 +55,10 @@ class NIP95Uploader {
       ["alt", "Binary data"],
     ];
 
-    var pubkey = nostr!.publicKey;
+    var pubkey = nostr.publicKey;
     var event =
         Event(pubkey, EventKind.STORAGE_SHARED_FILE, tags, base64Content);
 
-    return nostr!.sendEvent(event);
+    return nostr.sendEvent(event);
   }
 }

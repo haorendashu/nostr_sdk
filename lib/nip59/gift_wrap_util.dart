@@ -10,7 +10,7 @@ import '../nostr.dart';
 
 class GiftWrapUtil {
   static Future<Event?> getRumorEvent(Nostr nostr, Event e) async {
-    var rumorText = await nostr!.nostrSigner.nip44Decrypt(e.pubkey, e.content);
+    var rumorText = await nostr.nostrSigner.nip44Decrypt(e.pubkey, e.content);
     if (rumorText == null) {
       return null;
     }
@@ -23,7 +23,7 @@ class GiftWrapUtil {
       return null;
     }
 
-    var sourceText = await nostr!.nostrSigner
+    var sourceText = await nostr.nostrSigner
         .nip44Decrypt(rumorEvent.pubkey, rumorEvent.content);
     if (sourceText == null) {
       return null;
@@ -40,7 +40,7 @@ class GiftWrapUtil {
     var rumorEventMap = e.toJson();
     rumorEventMap.remove("sig");
 
-    var sealEventContent = await nostr!.nostrSigner
+    var sealEventContent = await nostr.nostrSigner
         .nip44Encrypt(receiverPublicKey, jsonEncode(rumorEventMap));
     if (sealEventContent == null) {
       return null;

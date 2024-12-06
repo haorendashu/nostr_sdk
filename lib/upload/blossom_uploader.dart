@@ -13,7 +13,7 @@ import '../utils/base64.dart';
 import '../utils/hash_util.dart';
 import '../utils/string_util.dart';
 
-// This uploader not complete.
+// This uploader is not complete.
 class BlossomUploader {
   static var dio = Dio();
 
@@ -30,7 +30,6 @@ class BlossomUploader {
             port: uri.port,
             path: "/upload")
         .toString();
-    // log("uploadApiPath is $uploadApiPath");
 
     String? payload;
     MultipartFile? multipartFile;
@@ -46,7 +45,7 @@ class BlossomUploader {
       }
     }
 
-    if (bytes == null || bytes.isEmpty) {
+    if (bytes.isEmpty) {
       return null;
     }
 
@@ -81,20 +80,17 @@ class BlossomUploader {
     ]);
     tags.add(["size", "$fileSize"]);
     tags.add(["x", payload]);
-    var nip98Event = Event(nostr!.publicKey, EventKind.BLOSSOM_HTTP_AUTH, tags,
+    var nip98Event = Event(nostr.publicKey, EventKind.BLOSSOM_HTTP_AUTH, tags,
         "Upload $fileName");
-    nostr!.signEvent(nip98Event);
-    // log(jsonEncode(nip98Event.toJson()));
+    nostr.signEvent(nip98Event);
     headers["Authorization"] =
         "Nostr ${base64Url.encode(utf8.encode(jsonEncode(nip98Event.toJson())))}";
 
     log(jsonEncode(headers));
 
-    // var formData = FormData.fromMap({"file": multipartFile});
     try {
       var response = await dio.put(
         uploadApiPath,
-        // data: formData,
         data: Stream.fromIterable(bytes.map((e) => [e])),
         options: Options(
           headers: headers,

@@ -90,7 +90,7 @@ class FollowSet extends ContactList {
     if (StringUtil.isNotBlank(e.content)) {
       try {
         var contentSource =
-            await nostr!.nostrSigner.decrypt(e.pubkey, e.content);
+            await nostr.nostrSigner.decrypt(e.pubkey, e.content);
         if (StringUtil.isNotBlank(contentSource)) {
           var jsonObj = jsonDecode(contentSource!);
           if (jsonObj is List) {

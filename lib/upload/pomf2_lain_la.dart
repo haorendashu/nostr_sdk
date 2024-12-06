@@ -6,7 +6,7 @@ import '../utils/base64.dart';
 import 'nostr_build_uploader.dart';
 
 class Pomf2LainLa {
-  static final String UPLOAD_ACTION = "https://pomf2.lain.la/upload.php";
+  static const String UPLOAD_ACTION = "https://pomf2.lain.la/upload.php";
 
   static Future<String?> upload(String filePath, {String? fileName}) async {
     // final dio = Dio();
