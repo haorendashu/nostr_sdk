@@ -74,4 +74,20 @@ class PlatformUtil {
     }
     return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
   }
+
+  static String getPlatformName() {
+    if (isWeb()) {
+      return "Web";
+    } else if (Platform.isAndroid) {
+      return "Android";
+    } else if (Platform.isIOS) {
+      return "IOS";
+    } else if (Platform.isWindows) {
+      return "Windows";
+    } else if (Platform.isMacOS) {
+      return "MacOS";
+    }
+
+    return "Unknow";
+  }
 }
