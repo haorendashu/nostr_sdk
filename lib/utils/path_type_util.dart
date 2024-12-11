@@ -27,7 +27,8 @@ class PathTypeUtil {
         n == ".mov" ||
         n == ".m4v" ||
         n == ".wmv" ||
-        n == ".m3u8") {
+        n == ".m3u8" ||
+        n == ".webm") {
       return "video";
     } else if (n == ".mp3" || n == ".m4a" || n == ".wav" || n == ".midi") {
       return "audio";
