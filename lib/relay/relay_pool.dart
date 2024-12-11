@@ -198,13 +198,6 @@ class RelayPool {
             return;
           }
         }
-        // if (filterProvider.checkBlock(event.pubkey)) {
-        //   return;
-        // }
-        // // check dirtyword
-        // if (filterProvider.checkDirtyword(event.content)) {
-        //   return;
-        // }
 
         if (relay is RelayLocal ||
             relay.relayStatus.relayType == RelayType.CACHE) {
