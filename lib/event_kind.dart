@@ -61,6 +61,8 @@ class EventKind {
 
   static const int GROUP_JOIN = 9021;
 
+  static const int GROUP_LEAVE = 9022;
+
   static const int ZAP_GOALS = 9041;
 
   static const int ZAP_REQUEST = 9734;
