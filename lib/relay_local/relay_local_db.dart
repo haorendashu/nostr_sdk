@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:nostr_sdk/utils/db_util.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -36,14 +37,7 @@ class RelayLocalDB with LaterFunction {
   }
 
   static Future<String> getFilepath() async {
-    String path = _dbName;
-
-    if (!PlatformUtil.isWeb()) {
-      var databasesPath = await getDatabasesPath();
-      path = join(databasesPath, _dbName);
-    }
-
-    return path;
+    return DBUtil.getPath(_dbName);
   }
 
   static Future<int> getDBFileSize() async {
