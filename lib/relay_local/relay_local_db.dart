@@ -29,6 +29,7 @@ class RelayLocalDB with LaterFunction {
 
   static Future<RelayLocalDB?> init() async {
     var path = await getFilepath();
+    print("path $path");
 
     var database = await openDatabase(path,
         version: _VERSION, onCreate: _onCreate, onUpgrade: onUpgrade);
@@ -37,7 +38,7 @@ class RelayLocalDB with LaterFunction {
   }
 
   static Future<String> getFilepath() async {
-    return DBUtil.getPath(_dbName);
+    return await DBUtil.getPath(_dbName);
   }
 
   static Future<int> getDBFileSize() async {
