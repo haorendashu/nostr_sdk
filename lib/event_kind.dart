@@ -31,6 +31,8 @@ class EventKind {
 
   static const int GENERIC_REPOST = 16;
 
+  static const int PICTURE = 20;
+
   static const int GIFT_WRAP = 1059;
 
   static const int FILE_HEADER = 1063;
@@ -129,6 +131,7 @@ class EventKind {
     TEXT_NOTE,
     REPOST,
     GENERIC_REPOST,
+    PICTURE,
     LONG_FORM,
     FILE_HEADER,
     STORAGE_SHARED_FILE,
