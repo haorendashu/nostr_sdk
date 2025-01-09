@@ -16,6 +16,8 @@ class EventRelation {
 
   List<String> tagEList = [];
 
+  String? rootPubkey;
+
   String? rootId;
 
   String? rootRelayAddr;
@@ -23,6 +25,8 @@ class EventRelation {
   String? replyId;
 
   String? replyRelayAddr;
+
+  String? replyPubkey;
 
   String? subject;
 
@@ -86,9 +90,15 @@ class EventRelation {
             if (marker == "root") {
               rootId = value;
               rootRelayAddr = tag[2];
+              if (tagLength > 4) {
+                rootPubkey = tag[4];
+              }
             } else if (marker == "reply") {
               replyId = value;
               replyRelayAddr = tag[2];
+              if (tagLength > 4) {
+                replyPubkey = tag[4];
+              }
             } else if (marker == "mention") {
               continue;
             }
