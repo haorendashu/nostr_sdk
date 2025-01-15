@@ -15,6 +15,13 @@ class EventMemBox implements FindEventInterface {
 
   EventMemBox({this.sortAfterAdd = true}) {}
 
+  static EventMemBox clone(EventMemBox eventBox) {
+    var emb = EventMemBox(sortAfterAdd: eventBox.sortAfterAdd);
+    emb._eventList = eventBox._eventList;
+    emb._idMap = eventBox._idMap;
+    return emb;
+  }
+
   @override
   List<Event> findEvent(String str, {int? limit = 5}) {
     List<Event> list = [];
