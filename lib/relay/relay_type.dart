@@ -14,4 +14,6 @@ class RelayType {
   static const List<int> ONLY_TEMP = [TEMP];
 
   static const List<int> ALL = [NORMAL, TEMP, LOCAL, CACHE];
+
+  static const List<int> NETWORK = [NORMAL, TEMP];
 }
