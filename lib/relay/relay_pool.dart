@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import '../event.dart';
@@ -10,8 +9,6 @@ import '../utils/string_util.dart';
 import 'client_connected.dart';
 import 'event_filter.dart';
 import 'relay.dart';
-import 'relay_base.dart';
-import 'relay_isolate.dart';
 import 'relay_type.dart';
 
 class RelayPool {
@@ -313,16 +310,99 @@ class RelayPool {
   /// like: subscribe the newest event、notice.
   /// subscribe info will hold in reply pool and close in reply pool.
   /// subscribe can be subscribe when new relay put into pool.
-  String subscribe(List<Map<String, dynamic>> filters, Function(Event) onEvent,
-      {String? id}) {
+  String subscribe(
+    List<Map<String, dynamic>> filters,
+    Function(Event) onEvent, {
+    String? id,
+    List<String>? tempRelays,
+    List<String>? targetRelays,
+    List<int> relayTypes = RelayType.ALL,
+    bool sendAfterAuth =
+        false, // if relay not connected, it will send after auth
+  }) {
     if (filters.isEmpty) {
       throw ArgumentError("No filters given", "filters");
     }
 
     final Subscription subscription = Subscription(filters, onEvent, id);
     _subscriptions[subscription.id] = subscription;
-    send(subscription.toJson());
+    // send(subscription.toJson());
+
+    // tempRelay, only query those relay which has bean provide
+    if (tempRelays != null &&
+        tempRelays.isNotEmpty &&
+        relayTypes.contains(RelayType.TEMP)) {
+      for (var tempRelayAddr in tempRelays) {
+        // check if normal relays has this temp relay, try to get relay from normal relays
+        Relay? relay = _relays[tempRelayAddr];
+        relay ??= checkAndGenTempRelay(tempRelayAddr);
+
+        relayDoSubscribe(relay, subscription, sendAfterAuth,
+            runBeforeConnected: true);
+      }
+    }
+
+    // normal relay, usually will query all the normal relays, but if targetRelays has provide, it only query from the provided querys.
+    if (relayTypes.contains(RelayType.NORMAL)) {
+      for (var entry in _relays.entries) {
+        var relayAddr = entry.key;
+        var relay = entry.value;
+
+        if (targetRelays != null) {
+          if (!targetRelays.contains(relayAddr)) {
+            continue;
+          }
+        }
+
+        relayDoSubscribe(relay, subscription, sendAfterAuth);
+      }
+    }
+
+    // cache relay
+    if (relayTypes.contains(RelayType.CACHE)) {
+      for (var relay in _cacheRelays.values) {
+        relayDoSubscribe(relay, subscription, sendAfterAuth);
+      }
+    }
+
+    // local relay
+    if (relayTypes.contains(RelayType.LOCAL) && relayLocal != null) {
+      relayDoSubscribe(relayLocal!, subscription, sendAfterAuth);
+    }
+
     return subscription.id;
+  }
+
+  bool relayDoSubscribe(
+      Relay relay, Subscription subscription, bool sendAfterAuth,
+      {bool runBeforeConnected = false}) {
+    if ((!runBeforeConnected &&
+            relay.relayStatus.connected != ClientConneccted.CONNECTED) ||
+        !relay.relayStatus.readAccess) {
+      return false;
+    }
+
+    relay.relayStatus.onQuery();
+
+    try {
+      var message = subscription.toJson();
+      if (sendAfterAuth && !relay.relayStatus.authed) {
+        relay.pendingAuthedMessages.add(message);
+        return true;
+      } else {
+        if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
+          return relay.send(message);
+        } else {
+          relay.pendingMessages.add(message);
+          return true;
+        }
+      }
+    } catch (err) {
+      log(err.toString());
+      relay.relayStatus.onError();
+    }
+
+    return false;
   }
 
   void unsubscribe(String id) {
