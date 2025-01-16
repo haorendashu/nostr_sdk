@@ -151,6 +151,10 @@ class Nostr {
     _pool.addInitQuery(filters, onEvent, id: id, onComplete: onComplete);
   }
 
+  bool tempRelayHasSubscription(String relayAddr) {
+    return _pool.tempRelayHasSubscription(relayAddr);
+  }
+
   String subscribe(
     List<Map<String, dynamic>> filters,
     Function(Event) onEvent, {

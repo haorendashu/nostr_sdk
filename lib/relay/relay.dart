@@ -21,6 +21,9 @@ abstract class Relay {
 
   Function(Relay, List<dynamic>)? onMessage;
 
+  // subscriptions
+  final Map<String, Subscription> _subscriptions = {};
+
   // quries
   final Map<String, Subscription> _queries = {};
 
@@ -89,6 +92,28 @@ abstract class Relay {
         connect();
       });
     }
+  }
+
+  List<Subscription> getSubscriptions() {
+    return _subscriptions.values.toList();
+  }
+
+  void saveSubscription(Subscription subscription) {
+    _subscriptions[subscription.id] = subscription;
+  }
+
+  bool checkAndCompleteSubscription(String id) {
+    // all subscription should be close
+    var sub = _subscriptions.remove(id);
+    if (sub != null) {
+      send(["CLOSE", id]);
+      return true;
+    }
+    return false;
+  }
+
+  bool hasSubscription() {
+    return _subscriptions.isNotEmpty;
   }
 
   void saveQuery(Subscription subscription) {

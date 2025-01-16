@@ -287,6 +287,14 @@ class RelayPool {
               relay.send(message);
             }
             relay.pendingAuthedMessages.clear();
+
+            // send subcription, but some subscrpition will send twice
+            if (relay.hasSubscription()) {
+              var subs = relay.getSubscriptions();
+              for (var subscription in subs) {
+                relay.send(subscription.toJson());
+              }
+            }
           });
         }
       }
@@ -385,6 +393,8 @@ class RelayPool {
     relay.relayStatus.onQuery();
 
     try {
+      relay.saveSubscription(subscription);
+
       var message = subscription.toJson();
       if (sendAfterAuth && !relay.relayStatus.authed) {
         relay.pendingAuthedMessages.add(message);
@@ -405,13 +415,46 @@ class RelayPool {
     return false;
   }
 
+  bool tempRelayHasSubscription(String relayAddr) {
+    var relay = _tempRelays[relayAddr];
+    if (relay != null) {
+      return relay.hasSubscription();
+    }
+
+    return false;
+  }
+
   void unsubscribe(String id) {
     final subscription = _subscriptions.remove(id);
     if (subscription != null) {
-      send(["CLOSE", subscription.id]);
+      // check query and send close
+      var it = _relays.values;
+      for (var relay in it) {
+        relay.checkAndCompleteSubscription(id);
+      }
+
+      it = _tempRelays.values;
+      for (var relay in it) {
+        relay.checkAndCompleteSubscription(id);
+      }
+
+      it = _cacheRelays.values;
+      for (var relay in it) {
+        relay.checkAndCompleteSubscription(id);
+      }
     } else {
       // check query and send close
       var it = _relays.values;
+      for (var relay in it) {
+        relay.checkAndCompleteQuery(id);
+      }
+
+      it = _tempRelays.values;
+      for (var relay in it) {
+        relay.checkAndCompleteQuery(id);
+      }
+
+      it = _cacheRelays.values;
       for (var relay in it) {
         relay.checkAndCompleteQuery(id);
       }
