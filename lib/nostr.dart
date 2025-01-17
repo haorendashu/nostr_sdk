@@ -207,6 +207,7 @@ class Nostr {
     String? id,
     Function? onComplete,
     List<String>? tempRelays,
+    List<String>? targetRelays,
     List<int> relayTypes = RelayType.ALL,
     bool sendAfterAuth = false,
   }) {
@@ -216,6 +217,7 @@ class Nostr {
       id: id,
       onComplete: onComplete,
       tempRelays: tempRelays,
+      targetRelays: targetRelays,
       sendAfterAuth: sendAfterAuth,
     );
   }
