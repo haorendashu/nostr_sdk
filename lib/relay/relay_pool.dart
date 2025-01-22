@@ -1,5 +1,7 @@
 import 'dart:developer';
 
+import 'package:nostr_sdk/utils/relay_addr_util.dart';
+
 import '../event.dart';
 import '../event_kind.dart';
 import '../nostr.dart';
@@ -332,6 +334,9 @@ class RelayPool {
       throw ArgumentError("No filters given", "filters");
     }
 
+    handleAddrList(tempRelays);
+    handleAddrList(targetRelays);
+
     final Subscription subscription = Subscription(filters, onEvent, id);
     _subscriptions[subscription.id] = subscription;
     // send(subscription.toJson());
@@ -486,6 +491,16 @@ class RelayPool {
     return id;
   }
 
+  void handleAddrList(List<String>? addrList) {
+    if (addrList != null) {
+      var length = addrList.length;
+      for (var i = 0; i < length; i++) {
+        var relayAddr = addrList[i];
+        addrList[i] = RelayAddrUtil.handle(relayAddr);
+      }
+    }
+  }
+
   /// query should be a one time filter search.
   /// like: query metadata, query old event.
   /// query info will hold in relay and close in relay when EOSE message be received.
@@ -505,6 +520,10 @@ class RelayPool {
     if (filters.isEmpty) {
       throw ArgumentError("No filters given", "filters");
     }
+
+    handleAddrList(tempRelays);
+    handleAddrList(targetRelays);
+
     Subscription subscription = Subscription(filters, onEvent, id);
     if (onComplete != null) {
       _queryCompleteCallbacks[subscription.id] = onComplete;
@@ -626,6 +645,8 @@ class RelayPool {
 
     int sameNum = 0;
     for (var extralRelay in extralRelays) {
+      extralRelay = RelayAddrUtil.handle(extralRelay);
+
       var relay = _relays[extralRelay];
       if (relay == null || !relay.relayStatus.readAccess) {
         // not contains or can't readable

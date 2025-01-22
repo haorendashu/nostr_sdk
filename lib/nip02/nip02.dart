@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:nostr_sdk/utils/relay_addr_util.dart';
+
 import '../relay/relay_status.dart';
 import '../utils/string_util.dart';
 
@@ -25,17 +27,24 @@ class NIP02 {
         jsonObj.map((key, value) => MapEntry(key, true));
 
     for (var entry in jsonMap.entries) {
-      var key = entry.key.toString();
-      var value = jsonObj[key];
+      try {
+        var key = entry.key.toString();
+        var value = jsonObj[key];
 
-      var readAcccess = value["read"] == true;
-      var writeAcccess = value["write"] == true;
+        var readAcccess = value["read"] == true;
+        var writeAcccess = value["write"] == true;
 
-      var relayStatus = RelayStatus(key);
-      relayStatus.readAccess = readAcccess;
-      relayStatus.writeAccess = writeAcccess;
+        key = RelayAddrUtil.handle(key);
 
-      relayStatuses.add(relayStatus);
+        var relayStatus = RelayStatus(key);
+        relayStatus.readAccess = readAcccess;
+        relayStatus.writeAccess = writeAcccess;
+
+        relayStatuses.add(relayStatus);
+      } catch (e) {
+        print("parse content to relay error");
+        print(e);
+      }
     }
 
     return relayStatuses;
