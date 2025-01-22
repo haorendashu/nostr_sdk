@@ -19,13 +19,13 @@ class NostrRemoteRequest {
     jsonMap["params"] = params;
 
     var jsonStr = jsonEncode(jsonMap);
-    return await signer.encrypt(pubkey, jsonStr);
+    return await signer.nip44Encrypt(pubkey, jsonStr);
   }
 
   static Future<NostrRemoteRequest?> decrypt(
       String ciphertext, NostrSigner signer, String pubkey) async {
     try {
-      var plaintext = await signer.decrypt(pubkey, ciphertext);
+      var plaintext = await signer.nip44Decrypt(pubkey, ciphertext);
       if (StringUtil.isNotBlank(plaintext)) {
         // print(plaintext);
         var jsonMap = jsonDecode(plaintext!);
