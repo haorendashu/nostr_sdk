@@ -10,7 +10,7 @@ import '../nostr.dart';
 
 class GiftWrapUtil {
   static Future<Event?> getRumorEvent(Nostr nostr, Event e) async {
-    var rumorText = await nostr!.nostrSigner.nip44Decrypt(e.pubkey, e.content);
+    var rumorText = await nostr.nostrSigner.nip44Decrypt(e.pubkey, e.content);
     if (rumorText == null) {
       return null;
     }
@@ -23,7 +23,7 @@ class GiftWrapUtil {
       return null;
     }
 
-    var sourceText = await nostr!.nostrSigner
+    var sourceText = await nostr.nostrSigner
         .nip44Decrypt(rumorEvent.pubkey, rumorEvent.content);
     if (sourceText == null) {
       return null;
@@ -34,20 +34,20 @@ class GiftWrapUtil {
   }
 
   static Future<Event?> getGiftWrapEvent(
-      Nostr nostr, Event e, Nostr targetNostr, String receiverPublicKey) async {
+      Nostr nostr, Event e, String receiverPublicKey) async {
     var giftEventCreatedAt =
         e.createdAt - math.Random().nextInt(60 * 60 * 24 * 2);
     var rumorEventMap = e.toJson();
     rumorEventMap.remove("sig");
 
-    var sealEventContent = await nostr!.nostrSigner
+    var sealEventContent = await nostr.nostrSigner
         .nip44Encrypt(receiverPublicKey, jsonEncode(rumorEventMap));
     if (sealEventContent == null) {
       return null;
     }
-    var sealEvent = Event(
-        targetNostr.publicKey, EventKind.SEAL_EVENT_KIND, [], sealEventContent);
-    targetNostr.signEvent(sealEvent);
+    var sealEvent =
+        Event(nostr.publicKey, EventKind.SEAL_EVENT_KIND, [], sealEventContent);
+    await nostr.signEvent(sealEvent);
 
     var randomPrivateKey = generatePrivateKey();
     var randomPubkey = getPublicKey(randomPrivateKey);

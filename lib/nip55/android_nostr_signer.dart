@@ -202,8 +202,7 @@ class AndroidNostrSigner implements NostrSigner {
 
   @override
   Future<Map?> getRelays() async {
-    // TODO: implement getRelays
-    throw UnimplementedError();
+    return {};
   }
 
   @override
@@ -211,7 +210,6 @@ class AndroidNostrSigner implements NostrSigner {
     return _lock.synchronized(() async {
       var queryResult = await _contentResolverQuery("NIP44_DECRYPT",
           [ciphertext, pubkey, _npub!], ["signature", "result"]);
-      // print(queryResult);
       if (queryResult != null &&
           queryResult.isNotEmpty &&
           queryResult[0] != null &&
