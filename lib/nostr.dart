@@ -190,12 +190,19 @@ class Nostr {
     var eventBox = EventMemBox(sortAfterAdd: false);
     var completer = Completer();
 
-    query(filters, id: id, tempRelays: tempRelays, sendAfterAuth: sendAfterAuth,
-        (event) {
-      eventBox.add(event);
-    }, onComplete: () {
-      completer.complete();
-    });
+    query(
+      filters,
+      id: id,
+      tempRelays: tempRelays,
+      relayTypes: relayTypes,
+      sendAfterAuth: sendAfterAuth,
+      (event) {
+        eventBox.add(event);
+      },
+      onComplete: () {
+        completer.complete();
+      },
+    );
 
     await completer.future;
     return eventBox.all();
@@ -218,6 +225,7 @@ class Nostr {
       onComplete: onComplete,
       tempRelays: tempRelays,
       targetRelays: targetRelays,
+      relayTypes: relayTypes,
       sendAfterAuth: sendAfterAuth,
     );
   }
