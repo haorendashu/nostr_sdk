@@ -40,4 +40,7 @@ class PubkeyOnlyNostrSigner implements NostrSigner {
   Future<String?> nip44Encrypt(pubkey, plaintext) async {
     return null;
   }
+
+  @override
+  void close() {}
 }

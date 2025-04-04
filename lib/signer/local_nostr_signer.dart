@@ -60,4 +60,7 @@ class LocalNostrSigner implements NostrSigner {
     var conversationKey = NIP44V2.shareSecret(_privateKey, pubkey);
     return await NIP44V2.encrypt(plaintext, conversationKey);
   }
+
+  @override
+  void close() {}
 }

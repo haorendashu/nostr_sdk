@@ -358,4 +358,7 @@ class AndroidNostrSigner implements NostrSigner {
       print(e);
     }
   }
+
+  @override
+  void close() {}
 }

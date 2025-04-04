@@ -14,4 +14,6 @@ abstract class NostrSigner {
   Future<String?> nip44Encrypt(pubkey, plaintext);
 
   Future<String?> nip44Decrypt(pubkey, ciphertext);
+
+  void close();
 }

@@ -144,6 +144,7 @@ class Nostr {
 
   void close() {
     _pool.removeAll();
+    nostrSigner.close();
   }
 
   void addInitQuery(List<Map<String, dynamic>> filters, Function(Event) onEvent,

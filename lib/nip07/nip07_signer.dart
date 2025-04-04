@@ -78,4 +78,7 @@ class NIP07Signer extends NostrSigner {
   Future<Event?> signEvent(Event event) async {
     return nip07SignerMethodSignEvent(event);
   }
+
+  @override
+  void close() {}
 }

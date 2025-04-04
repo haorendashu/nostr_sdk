@@ -170,7 +170,8 @@ class NostrRemoteSigner extends NostrSigner {
           relay.send(json, forceSend: true);
         }
 
-        return await completer.future.timeout(Duration(seconds: timeout), onTimeout: () {
+        return await completer.future.timeout(Duration(seconds: timeout),
+            onTimeout: () {
           return null;
         });
       }
@@ -244,4 +245,7 @@ class NostrRemoteSigner extends NostrSigner {
     _remotePubkeyTags ??= ["p", info.remoteSignerPubkey];
     return _remotePubkeyTags!;
   }
+
+  @override
+  void close() {}
 }
