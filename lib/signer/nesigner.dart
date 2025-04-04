@@ -120,8 +120,6 @@ class Nesigner implements NostrSigner {
       var eventMap = await _espSigner!.signEvent(event.toJson());
       if (eventMap != null) {
         var event = Event.fromJson(eventMap);
-        print("isValid ${event.isValid}");
-        print("isSigned ${event.isSigned}");
         return event;
       }
     }
