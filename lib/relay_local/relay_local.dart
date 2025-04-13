@@ -2,15 +2,19 @@ import '../event_kind.dart';
 import '../relay/client_connected.dart';
 import '../relay/relay.dart';
 import '../relay/relay_info.dart';
+import 'relay_db.dart';
 import 'relay_local_db.dart';
 import 'relay_local_mixin.dart';
 
+/// A Relay that direct used by clients.
+/// It is used to handle local events and queries.
+/// It doesn't have a real connection.
 class RelayLocal extends Relay with RelayLocalMixin {
   static const URL = "Local Relay";
 
-  RelayLocalDB relayLocalDB;
+  RelayDB relayDB;
 
-  RelayLocal(super.url, super.relayStatus, this.relayLocalDB) {
+  RelayLocal(super.url, super.relayStatus, this.relayDB) {
     super.relayStatus.connected = ClientConneccted.CONNECTED;
 
     info = RelayInfo(
@@ -24,7 +28,7 @@ class RelayLocal extends Relay with RelayLocalMixin {
   }
 
   void broadcaseToLocal(Map<String, dynamic> event) {
-    relayLocalDB.addEvent(event);
+    relayDB.addEvent(event);
   }
 
   @override
@@ -57,8 +61,8 @@ class RelayLocal extends Relay with RelayLocalMixin {
   }
 
   @override
-  RelayLocalDB getRelayLocalDB() {
-    return relayLocalDB;
+  RelayDB getRelayDB() {
+    return relayDB;
   }
 
   @override

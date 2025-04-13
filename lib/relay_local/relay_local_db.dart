@@ -12,8 +12,9 @@ import '../relay/event_filter.dart';
 import '../utils/later_function.dart';
 import '../utils/platform_util.dart';
 import '../utils/string_util.dart';
+import 'relay_db_extral.dart';
 
-class RelayLocalDB with LaterFunction {
+class RelayLocalDB extends RelayDBExtral with LaterFunction {
   static const _VERSION = 2;
 
   static const _dbName = "local_relay.db";
@@ -41,7 +42,7 @@ class RelayLocalDB with LaterFunction {
     return await DBUtil.getPath(_dbName);
   }
 
-  static Future<int> getDBFileSize() async {
+  Future<int> getDBFileSize() async {
     var path = await getFilepath();
     var file = File(path);
     return await file.length();

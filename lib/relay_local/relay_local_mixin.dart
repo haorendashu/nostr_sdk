@@ -1,8 +1,11 @@
 import '../event_kind.dart';
+import 'relay_db.dart';
 import 'relay_local_db.dart';
 
+/// RelayLocalMixin is a mixin that provides methods to real handle events and queries.
+/// This mixin usually doesn't direct used. It is used by the other relay class, such RelayLocal and CacheRelay.
 mixin RelayLocalMixin {
-  RelayLocalDB getRelayLocalDB();
+  RelayDB getRelayDB();
 
   void callback(String? connId, List<dynamic> list);
 
@@ -20,7 +23,7 @@ mixin RelayLocalMixin {
             var k = tag[0];
             var v = tag[1];
             if (k == "e") {
-              getRelayLocalDB().deleteEvent(pubkey, v);
+              getRelayDB().deleteEvent(pubkey, v);
             } else if (k == "a") {
               // TODO should add support delete by aid
             }
@@ -31,11 +34,11 @@ mixin RelayLocalMixin {
       if (eventKind == EventKind.METADATA ||
           eventKind == EventKind.CONTACT_LIST) {
         // these eventkind can only save 1 event, so delete other event first.
-        getRelayLocalDB().deleteEventByKind(pubkey, eventKind);
+        getRelayDB().deleteEventByKind(pubkey, eventKind);
       }
 
       // maybe it shouldn't insert here, due to it doesn't had a source.
-      getRelayLocalDB().addEvent(event);
+      getRelayDB().addEvent(event);
     }
 
     // send callback
@@ -49,7 +52,7 @@ mixin RelayLocalMixin {
       for (var i = 2; i < message.length; i++) {
         var filter = message[i];
 
-        var events = await getRelayLocalDB().doQueryEvent(filter);
+        var events = await getRelayDB().doQueryEvent(filter);
         for (var event in events) {
           // send callback
           callback(connId, ["EVENT", subscriptionId, event]);
@@ -65,7 +68,7 @@ mixin RelayLocalMixin {
     if (message.length > 2) {
       var subscriptionId = message[1];
       var filter = message[2];
-      var count = await getRelayLocalDB().doQueryCount(filter);
+      var count = await getRelayDB().doQueryCount(filter);
 
       // send callback
       callback(connId, [
