@@ -106,7 +106,7 @@ class EventRelation {
             }
           }
           tagEList.add(value);
-        } else if (tagKey == "subject") {
+        } else if (tagKey == "subject" || tagKey == "title") {
           subject = value;
         } else if (tagKey == "content-warning") {
           warning = true;
