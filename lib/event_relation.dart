@@ -22,11 +22,15 @@ class EventRelation {
 
   String? rootRelayAddr;
 
+  int? rootKind;
+
   String? replyId;
 
   String? replyRelayAddr;
 
   String? replyPubkey;
+
+  int? replyKind;
 
   String? subject;
 
@@ -87,22 +91,35 @@ class EventRelation {
 
           pMap[value] = 1;
         } else if (tagKey == "e") {
-          if (tagLength > 3) {
-            var marker = tag[3];
-            if (marker == "root") {
-              rootId = value;
-              rootRelayAddr = tag[2];
-              if (tagLength > 4) {
-                rootPubkey = tag[4];
-              }
-            } else if (marker == "reply") {
-              replyId = value;
+          if (isComment) {
+            // is comment!
+            // reply event id
+            replyId = value;
+            if (tagLength > 2) {
               replyRelayAddr = tag[2];
-              if (tagLength > 4) {
-                replyPubkey = tag[4];
+            }
+            if (tagLength > 3) {
+              replyPubkey = tag[3];
+            }
+          } else {
+            // not comment or root event or old style comment
+            if (tagLength > 3) {
+              var marker = tag[3];
+              if (marker == "root") {
+                rootId = value;
+                rootRelayAddr = tag[2];
+                if (tagLength > 4) {
+                  rootPubkey = tag[4];
+                }
+              } else if (marker == "reply") {
+                replyId = value;
+                replyRelayAddr = tag[2];
+                if (tagLength > 4) {
+                  replyPubkey = tag[4];
+                }
+              } else if (marker == "mention") {
+                continue;
               }
-            } else if (marker == "mention") {
-              continue;
             }
           }
           tagEList.add(value);
@@ -127,6 +144,32 @@ class EventRelation {
           var fileMetadata = FileMetadata.fromNIP92Tag(tag);
           if (fileMetadata != null) {
             fileMetadatas[fileMetadata.url] = fileMetadata;
+          }
+        } else if (tagKey == "K") {
+          rootKind = int.tryParse(value);
+        } else if (tagKey == "k") {
+          replyKind = int.tryParse(value);
+        } else if (tagKey == "P") {
+          rootPubkey = value;
+        } else if (tagKey == "p") {
+          replyPubkey = value;
+        } else if (isComment) {
+          if (tagKey == "A" || tagKey == "E" || tagKey == "I") {
+            if (tagKey == "A") {
+              // don't handle now.
+            } else if (tagKey == "E") {
+              // root event id
+              rootId = value;
+              if (tagLength > 2) {
+                rootRelayAddr = tag[2];
+              }
+              if (tagLength > 3) {
+                rootPubkey = tag[3];
+              }
+              tagEList.add(value);
+            } else if (tagKey == "I") {
+              // don't handle now.
+            }
           }
         }
       }
