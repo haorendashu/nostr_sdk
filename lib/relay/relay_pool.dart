@@ -14,6 +14,18 @@ import 'relay.dart';
 import 'relay_type.dart';
 
 class RelayPool {
+  // avoid to send these events to cache relay
+  static List<int> CACHE_AVOID_EVENTS = [
+    EventKind.NOSTR_REMOTE_SIGNING,
+    EventKind.GROUP_METADATA,
+    EventKind.GROUP_ADMINS,
+    EventKind.GROUP_MEMBERS,
+    EventKind.GROUP_CHAT_MESSAGE,
+    EventKind.GROUP_CHAT_REPLY,
+    EventKind.GROUP_NOTE,
+    EventKind.GROUP_NOTE_REPLY,
+  ];
+
   Nostr localNostr;
 
   final Map<String, Relay> _tempRelays = {};
@@ -180,7 +192,7 @@ class RelayPool {
             (relay.relayStatus.relayType != RelayType.CACHE)) {
           var event = Map<String, dynamic>.from(json[2]);
           var kind = event["kind"];
-          if (!EventKind.CACHE_AVOID_EVENTS.contains(kind)) {
+          if (!CACHE_AVOID_EVENTS.contains(kind)) {
             event["sources"] = [relay.url];
             _broadcaseToCache(event);
           }

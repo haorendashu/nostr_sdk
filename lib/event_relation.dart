@@ -58,6 +58,8 @@ class EventRelation {
     id = event.id;
     pubkey = event.pubkey;
 
+    bool isComment = event.kind == EventKind.COMMENT;
+
     Map<String, int> pMap = {};
     var length = event.tags.length;
     for (var i = 0; i < length; i++) {

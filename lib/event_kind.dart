@@ -39,6 +39,8 @@ class EventKind {
 
   static const int STORAGE_SHARED_FILE = 1064;
 
+  static const int COMMENT = 1111;
+
   static const int TORRENTS = 2003;
 
   static const int COMMUNITY_APPROVED = 4550;
@@ -114,31 +116,4 @@ class EventKind {
   static const int GROUP_ADMINS = 39001;
 
   static const int GROUP_MEMBERS = 39002;
-
-  // avoid to send these events to cache relay
-  static List<int> CACHE_AVOID_EVENTS = [
-    NOSTR_REMOTE_SIGNING,
-    GROUP_METADATA,
-    GROUP_ADMINS,
-    GROUP_MEMBERS,
-    GROUP_CHAT_MESSAGE,
-    GROUP_CHAT_REPLY,
-    GROUP_NOTE,
-    GROUP_NOTE_REPLY,
-  ];
-
-  static List<int> SUPPORTED_EVENTS = [
-    TEXT_NOTE,
-    REPOST,
-    GENERIC_REPOST,
-    PICTURE,
-    LONG_FORM,
-    FILE_HEADER,
-    STORAGE_SHARED_FILE,
-    TORRENTS,
-    POLL,
-    ZAP_GOALS,
-    VIDEO_HORIZONTAL,
-    VIDEO_VERTICAL,
-  ];
 }
