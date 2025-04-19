@@ -179,7 +179,7 @@ class NIP19Tlv {
   static String _handleEncodeResult(String hrp, List<int> buf) {
     var encoder = Bech32Encoder();
     Bech32 input = Bech32(hrp, buf);
-    return NOTE_REFERENCES + encoder.convert(input, 2000);
+    return encoder.convert(input, 2000);
   }
 
   static String encodeNprofile(Nprofile o) {

@@ -84,7 +84,8 @@ class EventRelation {
           if (event.content.contains(nip19Str)) {
             continue;
           }
-          nip19Str = NIP19Tlv.encodeNprofile(Nprofile(pubkey: value));
+          nip19Str =
+              "nostr:${NIP19Tlv.encodeNprofile(Nprofile(pubkey: value))}";
           if (event.content.contains(nip19Str)) {
             continue;
           }
