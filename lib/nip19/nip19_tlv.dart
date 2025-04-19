@@ -134,40 +134,46 @@ class NIP19Tlv {
   }
 
   static Naddr? decodeNaddr(String text) {
-    List<int> buf = _decodePreHandle(text);
+    try {
+      List<int> buf = _decodePreHandle(text);
 
-    String? id;
-    String? author;
-    int? kind;
-    List<String> relays = [];
+      String? id;
+      String? author;
+      int? kind;
 
-    int startIndex = 0;
-    while (true) {
-      var tlvData = TLVUtil.readTLVEntry(buf, startIndex: startIndex);
-      if (tlvData == null) {
-        break;
+      Map<String, int> relayMap = {};
+
+      int startIndex = 0;
+      while (true) {
+        var tlvData = TLVUtil.readTLVEntry(buf, startIndex: startIndex);
+        if (tlvData == null) {
+          break;
+        }
+        startIndex += tlvData.length + 2;
+
+        if (tlvData.typ == TLVType.Default) {
+          id = utf8.decode(tlvData.data);
+        } else if (tlvData.typ == TLVType.Relay) {
+          var relay = utf8.decode(tlvData.data);
+          relayMap[relay] = 1;
+        } else if (tlvData.typ == TLVType.Kind) {
+          Uint8List byteList = Uint8List.fromList(tlvData.data);
+          var byteData = ByteData.sublistView(byteList);
+          kind = byteData.getInt32(0, Endian.big);
+        } else if (tlvData.typ == TLVType.Author) {
+          author = HEX.encode(tlvData.data);
+        }
       }
-      startIndex += tlvData.length + 2;
 
-      if (tlvData.typ == TLVType.Default) {
-        id = HEX.encode(tlvData.data);
-      } else if (tlvData.typ == TLVType.Relay) {
-        var relay = utf8.decode(tlvData.data);
-        relays.add(relay);
-      } else if (tlvData.typ == TLVType.Kind) {
-        Uint8List byteList = Uint8List.fromList(tlvData.data);
-        var byteData = ByteData.sublistView(byteList);
-        kind = byteData.getInt32(0, Endian.big);
-      } else if (tlvData.typ == TLVType.Author) {
-        author = HEX.encode(tlvData.data);
+      if (id != null && author != null && kind != null) {
+        return Naddr(
+            id: id, author: author, kind: kind, relays: relayMap.keys.toList());
       }
-    }
 
-    if (id != null && author != null && kind != null) {
-      return Naddr(id: id, author: author, kind: kind, relays: relays);
+      return null;
+    } catch (e) {
+      print(e);
     }
-
-    return null;
   }
 
   static String _handleEncodeResult(String hrp, List<int> buf) {
@@ -218,9 +224,10 @@ class NIP19Tlv {
 
   static String encodeNaddr(Naddr o) {
     List<int> buf = [];
-    TLVUtil.writeTLVEntry(buf, TLVType.Default, HEX.decode(o.id));
+    TLVUtil.writeTLVEntry(buf, TLVType.Default, utf8.encode(o.id));
     TLVUtil.writeTLVEntry(buf, TLVType.Author, HEX.decode(o.author));
-    TLVUtil.writeTLVEntry(buf, TLVType.Kind, [o.kind]);
+    TLVUtil.writeTLVEntry(buf, TLVType.Kind,
+        Uint8List(4)..buffer.asByteData().setInt32(0, o.kind, Endian.big));
     if (o.relays != null) {
       for (var relay in o.relays!) {
         TLVUtil.writeTLVEntry(buf, TLVType.Relay, utf8.encode(relay));
@@ -229,7 +236,7 @@ class NIP19Tlv {
 
     buf = Nip19.convertBits(buf, 8, 5, true);
 
-    return _handleEncodeResult(Hrps.NRELAY, buf);
+    return _handleEncodeResult(Hrps.NADDR, buf);
   }
 }
 
@@ -282,6 +289,6 @@ class Naddr {
 
   @override
   String toString() {
-    return "$kind $id $author ${relays != null ? relays!.join(",") : ""}";
+    return "naddr ($kind $author $id ${relays != null ? relays!.join(",") : ""})";
   }
 }
