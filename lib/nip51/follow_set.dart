@@ -57,7 +57,7 @@ class FollowSet extends ContactList {
     return null;
   }
 
-  static Future<FollowSet?> genFollowSet(Nostr nostr, Event e) async {
+  static FollowSet getPublicFollowSet(Event e) {
     Map<String, Contact> contacts = {};
     Map<String, int> followedTags = {};
     Map<String, int> followedCommunitys = {};
@@ -87,22 +87,6 @@ class FollowSet extends ContactList {
       }
     }
 
-    if (StringUtil.isNotBlank(e.content)) {
-      try {
-        var contentSource =
-            await nostr!.nostrSigner.decrypt(e.pubkey, e.content);
-        if (StringUtil.isNotBlank(contentSource)) {
-          var jsonObj = jsonDecode(contentSource!);
-          if (jsonObj is List) {
-            ContactList.getContactInfoFromTags(jsonObj, privateContacts,
-                privateFollowedTags, privateFollowedCommunitys);
-          }
-        }
-      } catch (e) {
-        // sometimes would decode fail
-      }
-    }
-
     contacts.addAll(publicContacts);
     contacts.addAll(privateContacts);
     followedTags.addAll(publicFollowedTags);
@@ -123,6 +107,57 @@ class FollowSet extends ContactList {
       privateFollowedCommunitys,
       e.createdAt,
       title: title,
+    );
+  }
+
+  static Future<FollowSet?> getFollowSet(Nostr? nostr, Event e) async {
+    Map<String, Contact> contacts = {};
+    Map<String, int> followedTags = {};
+    Map<String, int> followedCommunitys = {};
+
+    Map<String, Contact> privateContacts = {};
+    Map<String, int> privateFollowedTags = {};
+    Map<String, int> privateFollowedCommunitys = {};
+
+    var publicFollowSet = getPublicFollowSet(e);
+
+    if (StringUtil.isNotBlank(e.content) && nostr != null) {
+      // content and nostr not null, decrypt the content.
+      try {
+        var contentSource =
+            await nostr!.nostrSigner.decrypt(e.pubkey, e.content);
+        if (StringUtil.isNotBlank(contentSource)) {
+          var jsonObj = jsonDecode(contentSource!);
+          if (jsonObj is List) {
+            ContactList.getContactInfoFromTags(jsonObj, privateContacts,
+                privateFollowedTags, privateFollowedCommunitys);
+          }
+        }
+      } catch (e) {
+        // sometimes would decode fail
+      }
+    }
+
+    contacts.addAll(publicFollowSet._publicContacts);
+    contacts.addAll(privateContacts);
+    followedTags.addAll(publicFollowSet._publicFollowedTags);
+    followedTags.addAll(privateFollowedTags);
+    followedCommunitys.addAll(publicFollowSet._publicFollowedCommunitys);
+    followedCommunitys.addAll(privateFollowedCommunitys);
+
+    return FollowSet(
+      publicFollowSet.dTag,
+      contacts,
+      followedTags,
+      followedCommunitys,
+      publicFollowSet._publicContacts,
+      publicFollowSet._publicFollowedTags,
+      publicFollowSet._publicFollowedCommunitys,
+      privateContacts,
+      privateFollowedTags,
+      privateFollowedCommunitys,
+      e.createdAt,
+      title: publicFollowSet.title,
     );
   }
 
