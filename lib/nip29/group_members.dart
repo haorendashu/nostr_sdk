@@ -60,4 +60,8 @@ class GroupMembers extends GroupObject {
       members!.add(pubkey);
     }
   }
+
+  bool isMember(String pubkey) {
+    return members != null && members!.contains(pubkey);
+  }
 }
