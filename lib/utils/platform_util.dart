@@ -33,6 +33,22 @@ class PlatformUtil {
     // }
   }
 
+  static bool isWindows() {
+    if (isWeb()) {
+      return false;
+    }
+
+    return Platform.isWindows;
+  }
+
+  static bool isMacOS() {
+    if (isWeb()) {
+      return false;
+    }
+
+    return Platform.isMacOS;
+  }
+
   static bool isAndroid() {
     if (isWeb()) {
       return false;
