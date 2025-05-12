@@ -72,6 +72,7 @@ class BolssomUploader {
         headers["Content-Type"] = "multipart/form-data";
       }
     }
+    headers["Content-Length"] = "$fileSize";
 
     var tags = [];
     tags.add(["t", "upload"]);
