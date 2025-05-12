@@ -24,26 +24,26 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
   // a eventId map in mem, to avoid alway insert event.
   Map<String, int> _memEventIdMap = {};
 
-  RelayLocalDB._(Database database) {
+  RelayLocalDB._(Database database, super.appName) {
     _database = database;
   }
 
-  static Future<RelayLocalDB?> init() async {
-    var path = await getFilepath();
+  static Future<RelayLocalDB?> init(String appName) async {
+    var path = await getFilepath(appName);
     print("path $path");
 
     var database = await openDatabase(path,
         version: _VERSION, onCreate: _onCreate, onUpgrade: onUpgrade);
 
-    return RelayLocalDB._(database);
+    return RelayLocalDB._(database, appName);
   }
 
-  static Future<String> getFilepath() async {
-    return await DBUtil.getPath(_dbName);
+  static Future<String> getFilepath(String appName) async {
+    return await DBUtil.getPath(appName, _dbName);
   }
 
   Future<int> getDBFileSize() async {
-    var path = await getFilepath();
+    var path = await getFilepath(appName);
     var file = File(path);
     return await file.length();
   }

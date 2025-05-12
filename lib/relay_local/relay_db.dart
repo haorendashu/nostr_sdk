@@ -1,6 +1,10 @@
 /// The interface for the relay database.
 /// It uesd for relays.
 abstract class RelayDB {
+  final String appName;
+
+  RelayDB(this.appName);
+
   Future<void> deleteEventByKind(String pubkey, int eventKind);
 
   Future<void> deleteEvent(String pubkey, String id);
