@@ -19,11 +19,14 @@ class EventKind {
 
   static const int GROUP_CHAT_MESSAGE = 9;
 
-  static const int GROUP_CHAT_REPLY = 10;
+  // @Deprecated("deprecated at nips, only query, not gen.")
+  // static const int GROUP_CHAT_REPLY = 10;
 
   static const int GROUP_NOTE = 11;
 
-  static const int GROUP_NOTE_REPLY = 12;
+  // @Deprecated(
+  //     "deprecated at nips, only query, not gen. and use COMMENT 1111 instead")
+  // static const int GROUP_NOTE_REPLY = 12;
 
   static const int SEAL_EVENT_KIND = 13;
 

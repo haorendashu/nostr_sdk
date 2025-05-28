@@ -21,9 +21,8 @@ class RelayPool {
     EventKind.GROUP_ADMINS,
     EventKind.GROUP_MEMBERS,
     EventKind.GROUP_CHAT_MESSAGE,
-    EventKind.GROUP_CHAT_REPLY,
     EventKind.GROUP_NOTE,
-    EventKind.GROUP_NOTE_REPLY,
+    EventKind.COMMENT,
   ];
 
   Nostr localNostr;
