@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:android_content_provider/android_content_provider.dart';
 import 'package:nostr_sdk/utils/string_util.dart';
@@ -85,13 +86,13 @@ class AndroidNostrSigner implements NostrSigner {
   Future<String?> decrypt(pubkey, ciphertext) async {
     return _lock.synchronized(() async {
       var queryResult = await _contentResolverQuery("NIP04_DECRYPT",
-          [ciphertext, pubkey, _npub!], ["signature", "result"]);
-      // print(queryResult);
-      if (queryResult != null &&
-          queryResult.isNotEmpty &&
-          queryResult[0] != null &&
-          queryResult[0] is String) {
-        return queryResult[0] as String;
+          [ciphertext, pubkey, _npub!], ["signature", "result", "rejected"]);
+      if (hasResult(queryResult)) {
+        return getResult(queryResult);
+      }
+
+      if (isRejected(queryResult)) {
+        return null;
       }
 
       var intent = _genIntent();
@@ -122,13 +123,13 @@ class AndroidNostrSigner implements NostrSigner {
   Future<String?> encrypt(pubkey, plaintext) async {
     return _lock.synchronized(() async {
       var queryResult = await _contentResolverQuery("NIP04_ENCRYPT",
-          [plaintext, pubkey, _npub!], ["signature", "result"]);
-      // print(queryResult);
-      if (queryResult != null &&
-          queryResult.isNotEmpty &&
-          queryResult[0] != null &&
-          queryResult[0] is String) {
-        return queryResult[0] as String;
+          [plaintext, pubkey, _npub!], ["signature", "result", "rejected"]);
+      if (hasResult(queryResult)) {
+        return getResult(queryResult);
+      }
+
+      if (isRejected(queryResult)) {
+        return null;
       }
 
       var intent = _genIntent();
@@ -209,12 +210,13 @@ class AndroidNostrSigner implements NostrSigner {
   Future<String?> nip44Decrypt(pubkey, ciphertext) async {
     return _lock.synchronized(() async {
       var queryResult = await _contentResolverQuery("NIP44_DECRYPT",
-          [ciphertext, pubkey, _npub!], ["signature", "result"]);
-      if (queryResult != null &&
-          queryResult.isNotEmpty &&
-          queryResult[0] != null &&
-          queryResult[0] is String) {
-        return queryResult[0] as String;
+          [ciphertext, pubkey, _npub!], ["signature", "result", "rejected"]);
+      if (hasResult(queryResult)) {
+        return getResult(queryResult);
+      }
+
+      if (isRejected(queryResult)) {
+        return null;
       }
 
       var intent = _genIntent();
@@ -245,13 +247,13 @@ class AndroidNostrSigner implements NostrSigner {
   Future<String?> nip44Encrypt(pubkey, plaintext) async {
     return _lock.synchronized(() async {
       var queryResult = await _contentResolverQuery("NIP44_ENCRYPT",
-          [plaintext, pubkey, _npub!], ["signature", "result"]);
-      // print(queryResult);
-      if (queryResult != null &&
-          queryResult.isNotEmpty &&
-          queryResult[0] != null &&
-          queryResult[0] is String) {
-        return queryResult[0] as String;
+          [plaintext, pubkey, _npub!], ["signature", "result", "rejected"]);
+      if (hasResult(queryResult)) {
+        return getResult(queryResult);
+      }
+
+      if (isRejected(queryResult)) {
+        return null;
       }
 
       var intent = _genIntent();
@@ -284,14 +286,17 @@ class AndroidNostrSigner implements NostrSigner {
     var eventJson = jsonEncode(eventMap);
 
     return _lock.synchronized(() async {
-      var queryResult = await _contentResolverQuery("SIGN_EVENT",
-          [eventJson, "", _npub!], ["signature", "result", "event"]);
-      if (queryResult != null &&
-          queryResult.isNotEmpty &&
-          queryResult[0] != null &&
-          queryResult[0] is String) {
-        event.sig = queryResult[0] as String;
+      var queryResult = await _contentResolverQuery(
+          "SIGN_EVENT",
+          [eventJson, "", _npub!],
+          ["signature", "result", "event", "rejected"]);
+      if (hasResult(queryResult)) {
+        event.sig = getResult(queryResult)!;
         return event;
+      }
+
+      if (isRejected(queryResult)) {
+        return null;
       }
 
       var intent = _genIntent();
@@ -320,10 +325,46 @@ class AndroidNostrSigner implements NostrSigner {
     }, timeout: TIMEOUT);
   }
 
-  Future<List<Object?>?> _getValuesFromCursor(
+  bool isRejected(Map<String, Object?> queryResult) {
+    if (queryResult.isNotEmpty && queryResult.containsKey("rejected")) {
+      return true;
+    }
+    return false;
+  }
+
+  bool hasResult(Map<String, Object?> queryResult) {
+    if (queryResult.isNotEmpty &&
+        ((queryResult.containsKey("signature") &&
+                queryResult["signature"] != null &&
+                queryResult["signature"] is String) ||
+            queryResult.containsKey("result") &&
+                queryResult["result"] != null &&
+                queryResult["result"] is String)) {
+      return true;
+    }
+    return false;
+  }
+
+  String? getResult(Map<String, Object?> queryResult) {
+    if (queryResult.isNotEmpty) {
+      if (queryResult.containsKey("signature") &&
+          queryResult["signature"] != null &&
+          queryResult["signature"] is String) {
+        return queryResult["signature"] as String;
+      } else if (queryResult.containsKey("result") &&
+          queryResult["result"] != null &&
+          queryResult["result"] is String) {
+        return queryResult["result"] as String;
+      }
+    }
+    return null;
+  }
+
+  Future<Map<String, Object?>> _getValuesFromCursor(
       NativeCursor? cursor, List<String> columnNames) async {
+    Map<String, Object?> resultMap = {};
     if (cursor == null || !(await cursor.moveToFirst())) {
-      return null;
+      return resultMap;
     }
 
     var getIndexBatch = cursor.batchedGet();
@@ -332,20 +373,37 @@ class AndroidNostrSigner implements NostrSigner {
     }
     var columnIndexList = await getIndexBatch.commit();
 
+    Map<int, String> columnIndexMap = {};
+    int valueGetIndex = 0;
+    var length = min(columnIndexList.length, columnNames.length);
     var getValueBatch = cursor.batchedGet();
-    for (var columnIndexObj in columnIndexList) {
-      if (columnIndexObj is int) {
+    for (var i = 0; i < length; i++) {
+      var columnIndexObj = columnIndexList[i];
+      var columnName = columnNames[i];
+      if (columnIndexObj is int && columnIndexObj >= 0) {
         getValueBatch.getString(columnIndexObj);
+
+        columnIndexMap[valueGetIndex++] = columnName;
       }
     }
 
-    return await getValueBatch.commit();
+    var values = await getValueBatch.commit();
+    for (var i = 0; i < values.length; i++) {
+      var value = values[i];
+
+      var columnName = columnIndexMap[i];
+      if (StringUtil.isNotBlank(columnName)) {
+        resultMap[columnName!] = value;
+      }
+    }
+
+    return resultMap;
   }
 
-  Future<List<Object?>?> _contentResolverQuery(
+  Future<Map<String, Object?>> _contentResolverQuery(
       String method, List<String> args, List<String> valueNames) async {
     if (StringUtil.isBlank(_package)) {
-      return null;
+      return {};
     }
 
     try {
@@ -357,6 +415,8 @@ class AndroidNostrSigner implements NostrSigner {
       print("contentResolverQuery exception");
       print(e);
     }
+
+    return {};
   }
 
   @override
