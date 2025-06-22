@@ -10,18 +10,18 @@ class Tokens {
     if (json['token'] != null) {
       token = <Token>[];
       json['token'].forEach((v) {
-        token!.add(new Token.fromJson(v));
+        token!.add(Token.fromJson(v));
       });
     }
     memo = json['memo'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.token != null) {
-      data['token'] = this.token!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (token != null) {
+      data['token'] = token!.map((v) => v.toJson()).toList();
     }
-    data['memo'] = this.memo;
+    data['memo'] = memo;
     return data;
   }
 
@@ -74,10 +74,10 @@ class Token {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['mint'] = this.mint;
-    if (this.proofs != null) {
-      data['proofs'] = this.proofs!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['mint'] = mint;
+    if (proofs != null) {
+      data['proofs'] = proofs!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -99,11 +99,11 @@ class Proof {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['amount'] = this.amount;
-    data['secret'] = this.secret;
-    data['C'] = this.c;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['amount'] = amount;
+    data['secret'] = secret;
+    data['C'] = c;
     return data;
   }
 }

@@ -52,5 +52,6 @@ class BadgeDefinition {
             name: name, description: description, image: image, thumb: thumb);
       }
     }
+    return null;
   }
 }

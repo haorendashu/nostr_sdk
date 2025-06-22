@@ -1,5 +1,4 @@
 class GroupIdentifier {
-
   // This field in here is wss://domain not like NIP29 domain
   String host;
 

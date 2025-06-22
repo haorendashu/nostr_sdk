@@ -1,9 +1,7 @@
-import '../event_kind.dart';
 import '../relay/client_connected.dart';
 import '../relay/relay.dart';
 import '../relay/relay_info.dart';
 import 'relay_db.dart';
-import 'relay_local_db.dart';
 import 'relay_local_mixin.dart';
 
 /// A Relay that direct used by clients.

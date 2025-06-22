@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart' as crypto;
 
 class HashUtil {
   static String md5(String source) {
-    var content = Utf8Encoder().convert(source);
+    var content = const Utf8Encoder().convert(source);
     var digest = crypto.md5.convert(content);
     // digest.toString()
     return hex.encode(digest.bytes);

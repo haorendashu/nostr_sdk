@@ -13,14 +13,14 @@ class StringUtil {
   }
 
   static String breakWord(String word) {
-    if (word == null || word.isEmpty) {
+    if (word.isEmpty) {
       return word;
     }
     String breakWord = '';
-    word.runes.forEach((element) {
+    for (var element in word.runes) {
       breakWord += String.fromCharCode(element);
       breakWord += '\u200B';
-    });
+    }
     return breakWord;
   }
 
@@ -28,14 +28,14 @@ class StringUtil {
     // var runes = word.runes;
     // var length = runes.length;
     List<String> letters = [];
-    word.runes.forEach((int rune) {
+    for (var rune in word.runes) {
       var character = String.fromCharCode(rune);
       letters.add(character);
-    });
+    }
     return letters;
   }
 
-  static List<String> _rndHex = [
+  static final List<String> _rndHex = [
     "0",
     "1",
     "2",
@@ -112,7 +112,7 @@ class StringUtil {
     return str;
   }
 
-  static List<String> _rndNameHex = [
+  static final List<String> _rndNameHex = [
     "0",
     "1",
     "2",

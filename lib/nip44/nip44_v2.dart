@@ -10,7 +10,7 @@ import 'package:cryptography/cryptography.dart' as cryptography;
 // code from https://github.com/0xchat-app/nostr-dart
 class NIP44V2 {
   static final _digest = SHA256Digest();
-  static final _hmacBlockSize = 64;
+  static const _hmacBlockSize = 64;
 
   static Uint8List hkdfExtract(Uint8List salt, Uint8List ikm) {
     var hmac = HMac(_digest, _hmacBlockSize)..init(KeyParameter(salt));
@@ -65,9 +65,10 @@ class NIP44V2 {
   }
 
   static Uint8List writeU16BE(int num) {
-    if (num < 1 || num > 65535)
+    if (num < 1 || num > 65535) {
       throw Exception(
           'Invalid plaintext size: must be between 1 and 65535 bytes');
+    }
     var buffer = ByteData(2);
     buffer.setUint16(0, num, Endian.big);
     return buffer.buffer.asUint8List();
@@ -95,8 +96,9 @@ class NIP44V2 {
   }
 
   static Uint8List hmacAad(Uint8List key, Uint8List message, Uint8List aad) {
-    if (aad.length != 32)
+    if (aad.length != 32) {
       throw Exception('AAD associated data must be 32 bytes');
+    }
     var combined = Uint8List.fromList(aad + message);
     var hmac = HMac(SHA256Digest(), 64)..init(KeyParameter(key));
     return hmac.process(combined);

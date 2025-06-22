@@ -125,10 +125,14 @@ class Event {
   }
 
   bool get isSigned {
-    if (!schnorr.verify(pubkey, id, sig)) {
+    if (sig.isEmpty) {
       return false;
     }
-    return true;
+    try {
+      return schnorr.verify(pubkey, id, sig);
+    } catch (e) {
+      return false;
+    }
   }
 
   // Individual events with the same "id" are equivalent

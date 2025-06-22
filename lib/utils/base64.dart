@@ -16,7 +16,7 @@ class BASE64 {
     if (index > -1) {
       text = text.substring(index + 8);
     }
-    return Base64Decoder().convert(text);
+    return const Base64Decoder().convert(text);
   }
 
   static String toBase64(Uint8List data) {

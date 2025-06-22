@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'client_utils/keys.dart';
 import 'event.dart';
 import 'event_kind.dart';
 import 'event_mem_box.dart';
@@ -18,7 +17,7 @@ class Nostr {
 
   NostrSigner nostrSigner;
 
-  String _publicKey;
+  final String _publicKey;
 
   Function(String, String)? onNotice;
 

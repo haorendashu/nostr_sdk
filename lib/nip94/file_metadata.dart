@@ -141,6 +141,7 @@ class FileMetadata {
         fallback: fallback,
       );
     }
+    return null;
   }
 
   int? getImageWidth() {

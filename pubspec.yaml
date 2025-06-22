@@ -1,7 +1,18 @@
 name: nostr_sdk
-description: "A new Flutter package project."
-version: 0.0.1
-homepage:
+description: Comprehensive Flutter/Dart SDK for building Nostr applications. Supports 21+ NIPs including events, signing, encryption, relays, and file uploads.
+version: 0.1.0
+homepage: https://github.com/rabble/nostr_sdk
+repository: https://github.com/rabble/nostr_sdk
+issue_tracker: https://github.com/rabble/nostr_sdk/issues
+documentation: https://github.com/rabble/nostr_sdk
+
+topics:
+  - nostr
+  - decentralized
+  - social
+  - bitcoin
+  - cryptography
+  - nip
 
 environment:
   sdk: '>=3.4.1 <4.0.0'
@@ -13,30 +24,34 @@ dependencies:
   bip340: ^0.3.0
   hex: ^0.2.0
   string_validator: ^1.1.0
-  dio: 5.7.0
-  dio_cookie_manager: 3.1.1
+  dio: ^5.7.0
+  dio_cookie_manager: ^3.1.1
   device_info_plus: ^10.1.0
   bech32: ^0.2.2
   kepler: ^1.0.3
   cryptography: ^2.7.0
-  # cryptography_flutter: ^2.3.2
-  cryptography_flutter:
-    git:
-        url: https://github.com/mvarendorff/cryptography
-        ref: fix/compatibility-agp-8x
-        path: cryptography_flutter
+  cryptography_flutter: ^2.3.2
   synchronized: ^3.3.0+3
   web_socket_channel: ^3.0.2
   flutter_socks_proxy: ^0.0.3
-  sqflite: 2.4.1
-  sqflite_common_ffi: 2.3.4+4
-  sqflite_common: 2.5.4+6
-  sqflite_common_ffi_web: 0.4.5+4
+  sqflite: ^2.4.1
+  sqflite_common_ffi: ^2.3.4+4
+  sqflite_common: ^2.5.4+6
+  sqflite_common_ffi_web: ^0.4.5+4
   pretty_dio_logger: ^1.4.0
   mime: ^2.0.0
   android_content_provider: ^0.5.2
   path_provider: ^2.1.5
+  # Missing dependencies identified by pub publish
+  path: ^1.8.3
+  convert: ^3.1.1
+  crypto: ^3.0.3
+  pointycastle: ^3.7.3
+  cookie_jar: ^4.0.8
 
+  clock: ^1.1.2
+  http: ^1.4.0
+  http_parser: ^4.1.2
 dependency_overrides:
   meta: ^1.16.0
 

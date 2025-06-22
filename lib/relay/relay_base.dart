@@ -5,10 +5,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'client_connected.dart';
 import 'relay.dart';
-import 'relay_status.dart';
 
 class RelayBase extends Relay {
-  RelayBase(String url, RelayStatus relayStatus) : super(url, relayStatus);
+  RelayBase(super.url, super.relayStatus);
 
   WebSocketChannel? _wsChannel;
 

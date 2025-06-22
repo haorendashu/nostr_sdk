@@ -13,16 +13,16 @@ class AndroidPluginIntent {
   late Map<String, String> _typeInfo;
 
   AndroidPluginIntent() {
-    this._category = [];
-    this._flag = [];
-    this._extra = {};
-    this._typeInfo = {};
+    _category = [];
+    _flag = [];
+    _extra = {};
+    _typeInfo = {};
   }
 
   /// Adds category for this intent
   ///
   /// Supported values can be found in Category class
-  addCategory(String category) => this._category.add(category);
+  addCategory(String category) => _category.add(category);
 
   List<String> getCategory() {
     return _category;
@@ -31,7 +31,7 @@ class AndroidPluginIntent {
   /// Sets flags for intent
   ///
   /// Get possible flag values from Flag class
-  addFlag(int flag) => this._flag.add(flag);
+  addFlag(int flag) => _flag.add(flag);
 
   List<int> getFlag() {
     return _flag;
@@ -44,9 +44,9 @@ class AndroidPluginIntent {
   /// TypedExtra class holds predefined constants ( type information ),
   /// consider using those
   putExtra(String extra, dynamic data, {String? type, bool setType = true}) {
-    this._extra[extra] = data;
+    _extra[extra] = data;
     if (type != null) {
-      this._typeInfo[extra] = type;
+      _typeInfo[extra] = type;
     } else {
       if (setType) {
         if (data is bool) {
@@ -88,7 +88,7 @@ class AndroidPluginIntent {
         }
 
         if (StringUtil.isNotBlank(type)) {
-          this._typeInfo[extra] = type!;
+          _typeInfo[extra] = type!;
         }
       }
     }
@@ -97,14 +97,14 @@ class AndroidPluginIntent {
   /// Sets what action this intent is supposed to do
   ///
   /// Possible values can be found in Action class
-  setAction(String action) => this._action = action;
+  setAction(String action) => _action = action;
 
   String? getAction() {
     return _action;
   }
 
   /// Sets data type or mime-type
-  setType(String type) => this._type = type;
+  setType(String type) => _type = type;
 
   String? getType() {
     return _type;
@@ -112,14 +112,14 @@ class AndroidPluginIntent {
 
   /// Explicitly sets package information using which
   /// Intent to be resolved, preventing chooser from showing up
-  setPackage(String package) => this._package = package;
+  setPackage(String package) => _package = package;
 
   String? getPackage() {
     return _package;
   }
 
   /// Sets data, on which intent will perform selected action
-  setData(String data) => this._data = data;
+  setData(String data) => _data = data;
 
   String? getData() {
     return _data;

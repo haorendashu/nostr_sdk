@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:isolate';
 
 import 'client_connected.dart';
 import 'relay.dart';
 import 'relay_isolate_worker.dart';
-import 'relay_status.dart';
 
 // The real relay, whick is run in other isolate.
 // It can move jsonDecode and event id check and sign check from main Isolate
@@ -16,11 +14,11 @@ class RelayIsolate extends Relay {
   String? relayNetwork;
 
   RelayIsolate(
-    String url,
-    RelayStatus relayStatus, {
+    super.url,
+    super.relayStatus, {
     this.eventSignCheck = false,
     this.relayNetwork,
-  }) : super(url, relayStatus);
+  });
 
   Isolate? isolate;
 

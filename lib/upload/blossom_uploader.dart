@@ -46,7 +46,7 @@ class BolssomUploader {
       }
     }
 
-    if (bytes == null || bytes.isEmpty) {
+    if (bytes.isEmpty) {
       return null;
     }
 
