@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'event.dart';
 import 'relay/relay.dart';
 import 'utils/find_event_interface.dart';
@@ -13,7 +11,7 @@ class EventMemBox implements FindEventInterface {
 
   bool sortAfterAdd;
 
-  EventMemBox({this.sortAfterAdd = true}) {}
+  EventMemBox({this.sortAfterAdd = true});
 
   static EventMemBox clone(EventMemBox eventBox) {
     var emb = EventMemBox(sortAfterAdd: eventBox.sortAfterAdd);

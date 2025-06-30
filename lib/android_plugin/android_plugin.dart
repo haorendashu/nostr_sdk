@@ -4,7 +4,7 @@ import 'android_plugin_activity_result.dart';
 import 'android_plugin_intent.dart';
 
 class AndroidPlugin {
-  static const MethodChannel _channel = const MethodChannel('nostrmoPlugin');
+  static const MethodChannel _channel = MethodChannel('nostrmoPlugin');
 
   static Future<String?> getPlatformVersion() async {
     return await _channel.invokeMethod<String>("getPlatformVersion");

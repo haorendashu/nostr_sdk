@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -47,7 +46,7 @@ class NIP96Uploader {
       }
     }
 
-    if (bytes == null || bytes.isEmpty) {
+    if (bytes.isEmpty) {
       return null;
     }
 
@@ -81,9 +80,9 @@ class NIP96Uploader {
       if (StringUtil.isNotBlank(payload)) {
         tags.add(["payload", payload]);
       }
-      var nip98Event = Event(nostr!.publicKey, EventKind.HTTP_AUTH, tags, "");
+      var nip98Event = Event(nostr.publicKey, EventKind.HTTP_AUTH, tags, "");
 
-      await nostr!.signEvent(nip98Event);
+      await nostr.signEvent(nip98Event);
       // log(jsonEncode(nip98Event.toJson()));
       headers["Authorization"] =
           "Nostr ${base64Url.encode(utf8.encode(jsonEncode(nip98Event.toJson())))}";

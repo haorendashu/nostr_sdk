@@ -174,6 +174,7 @@ class NIP19Tlv {
     } catch (e) {
       print(e);
     }
+    return null;
   }
 
   static String _handleEncodeResult(String hrp, List<int> buf) {

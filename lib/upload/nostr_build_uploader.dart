@@ -31,13 +31,13 @@ class NostrBuildUploader {
   //   return uploadResult;
   // }
 
-  static final String UPLOAD_ACTION = "https://nostr.build/api/v2/upload/files";
+  static const String UPLOAD_ACTION = "https://nostr.build/api/v2/upload/files";
 
   static Future<String?> upload(String filePath, {String? fileName}) async {
     MultipartFile? multipartFile;
     if (BASE64.check(filePath)) {
       var bytes = BASE64.toData(filePath);
-      multipartFile = await MultipartFile.fromBytes(
+      multipartFile = MultipartFile.fromBytes(
         bytes,
         filename: fileName,
       );

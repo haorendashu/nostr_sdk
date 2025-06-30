@@ -5,12 +5,10 @@ import 'dart:io';
 
 import 'package:nostr_sdk/utils/db_util.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 
 import '../event.dart';
 import '../relay/event_filter.dart';
 import '../utils/later_function.dart';
-import '../utils/platform_util.dart';
 import '../utils/string_util.dart';
 import 'relay_db_extral.dart';
 
@@ -22,7 +20,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
   late Database _database;
 
   // a eventId map in mem, to avoid alway insert event.
-  Map<String, int> _memEventIdMap = {};
+  final Map<String, int> _memEventIdMap = {};
 
   RelayLocalDB._(Database database, super.appName) {
     _database = database;
@@ -42,6 +40,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     return await DBUtil.getPath(appName, _dbName);
   }
 
+  @override
   Future<int> getDBFileSize() async {
     var path = await getFilepath(appName);
     var file = File(path);
@@ -117,11 +116,13 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     return value != null;
   }
 
+  @override
   Future<void> deleteEventByKind(String pubkey, int eventKind) async {
     var sql = "delete from event where kind = ? and pubkey = ?";
     await _database.execute(sql, [eventKind, pubkey]);
   }
 
+  @override
   Future<void> deleteEvent(String pubkey, String id) async {
     var sql = "delete from event where id = ? and pubkey = ?";
     await _database.execute(sql, [id, pubkey]);
@@ -129,6 +130,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
 
   List<Map<String, dynamic>> penddingEventMspList = [];
 
+  @override
   Future<int> addEvent(Map<String, dynamic> event) async {
     if (checkAndSetEventFromMem(event)) {
       return 0;
@@ -228,6 +230,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     return "${List.filled(n - 1, "?").join(",")},?";
   }
 
+  @override
   Future<List<Map<String, Object?>>> doQueryEvent(
       Map<String, dynamic> filter) async {
     List<dynamic> params = [];
@@ -238,6 +241,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     return events;
   }
 
+  @override
   Future<int?> doQueryCount(Map<String, dynamic> filter) async {
     List<dynamic> params = [];
     var sql = queryEventsSql(filter, true, params);
@@ -299,7 +303,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     var search = filter.remove("search");
     if (search != null && search is String) {
       conditions.add("content LIKE ? ESCAPE '\\'");
-      params.add("%${search.replaceAll("%", "\%")}%");
+      params.add("%${search.replaceAll("%", "%")}%");
     }
 
     List<String> tagQueryConditions = [];
@@ -311,7 +315,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
       if (k != "limit") {
         for (var vItem in v) {
           tagQueryConditions.add("tags LIKE ? ESCAPE '\\'");
-          tagQuery.add("${k.replaceFirst("#", "")}\",\"${vItem}");
+          tagQuery.add("${k.replaceFirst("#", "")}\",\"$vItem");
         }
       }
     }
@@ -321,7 +325,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
       conditions.add(tagQueryConditions[0]);
     }
     for (var tagValue in tagQuery) {
-      params.add("%${tagValue.replaceAll("%", "\%")}%");
+      params.add("%${tagValue.replaceAll("%", "%")}%");
     }
 
     if (conditions.isEmpty) {
@@ -351,6 +355,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     return query;
   }
 
+  @override
   Future<List<Map<String, Object?>>> queryEventByPubkey(String pubkey,
       {List<int>? eventKinds}) async {
     // print("queryEventByPubkey $pubkey $eventKinds");
@@ -414,11 +419,13 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     return event;
   }
 
+  @override
   Future<int?> allDataCount() async {
     var sql = "select count(1) from event";
     return Sqflite.firstIntValue(await _database.rawQuery(sql, []));
   }
 
+  @override
   Future<void> deleteData({String? pubkey}) async {
     List params = [];
     var sql = "delete from event where 1 = 1";

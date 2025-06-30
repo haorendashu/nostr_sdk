@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:nostr_sdk/utils/relay_addr_util.dart';
 
 import '../relay/relay_status.dart';
-import '../utils/string_util.dart';
 
 class NIP02 {
   static String relaysToContent(List<RelayStatus> relayStatuses) {

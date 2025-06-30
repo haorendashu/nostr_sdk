@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:isolate';
 
 import 'client_connected.dart';
 import 'relay.dart';
 import 'relay_isolate_worker.dart';
-import 'relay_status.dart';
 
 // The real relay, whick is run in other isolate.
 // It can move jsonDecode and event id check and sign check from main Isolate
@@ -16,11 +14,11 @@ class RelayIsolate extends Relay {
   String? relayNetwork;
 
   RelayIsolate(
-    String url,
-    RelayStatus relayStatus, {
+    super.url,
+    super.relayStatus, {
     this.eventSignCheck = false,
     this.relayNetwork,
-  }) : super(url, relayStatus);
+  });
 
   Isolate? isolate;
 
@@ -94,13 +92,47 @@ class RelayIsolate extends Relay {
     if (forceSend == true ||
         (mainToSubSendPort != null &&
             relayStatus.connected == ClientConneccted.CONNECTED)) {
-      final encoded = jsonEncode(message);
+      // Defensive serialization: Ensure all data is JSON-serializable
+      final sanitizedMessage = sanitizeForJson(message);
+      final encoded = jsonEncode(sanitizedMessage);
       // log(encoded);
       mainToSubSendPort!.send(encoded);
       return true;
     }
 
     return false;
+  }
+
+  /// Recursively sanitize data structures to ensure JSON serializability
+  dynamic sanitizeForJson(dynamic data) {
+    if (data == null) {
+      return null;
+    } else if (data is String || data is num || data is bool) {
+      return data;
+    } else if (data is List) {
+      return data.map((item) => sanitizeForJson(item)).toList();
+    } else if (data is Map) {
+      final result = <String, dynamic>{};
+      data.forEach((key, value) {
+        // Ensure keys are strings
+        final stringKey = key.toString();
+        result[stringKey] = sanitizeForJson(value);
+      });
+      return result;
+    } else {
+      // For any other type, try to convert to JSON-compatible format
+      try {
+        // If it has a toJson method, use it
+        if (data is dynamic && data.toJson != null) {
+          return sanitizeForJson(data.toJson());
+        }
+      } catch (e) {
+        // Ignore toJson errors and fall through
+      }
+      
+      // As last resort, convert to string
+      return data.toString();
+    }
   }
 
   void subToMainListener(ReceivePort receivePort) {

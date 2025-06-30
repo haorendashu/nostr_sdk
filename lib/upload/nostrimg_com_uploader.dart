@@ -1,13 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:nostr_sdk/upload/upload_util.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:http_parser/src/media_type.dart';
 
 import '../utils/base64.dart';
 import 'nostr_build_uploader.dart';
 
 class NostrimgComUploader {
-  static final String UPLOAD_ACTION = "https://nostrimg.com/api/upload";
+  static const String UPLOAD_ACTION = "https://nostrimg.com/api/upload";
 
   static Future<String?> upload(String filePath, {String? fileName}) async {
     // final dio = Dio();
@@ -16,7 +15,7 @@ class NostrimgComUploader {
     MultipartFile? multipartFile;
     if (BASE64.check(filePath)) {
       var bytes = BASE64.toData(filePath);
-      multipartFile = await MultipartFile.fromBytes(
+      multipartFile = MultipartFile.fromBytes(
         bytes,
         filename: fileName,
         contentType: MediaType.parse(fileType),

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'client_utils/keys.dart';
 import 'event.dart';
 import 'event_kind.dart';
 import 'event_mem_box.dart';
@@ -18,7 +17,7 @@ class Nostr {
 
   NostrSigner nostrSigner;
 
-  String _publicKey;
+  final String _publicKey;
 
   Function(String, String)? onNotice;
 
@@ -31,6 +30,8 @@ class Nostr {
   }
 
   String get publicKey => _publicKey;
+
+  RelayPool get relayPool => _pool;
 
   Future<Event?> sendLike(String id,
       {String? pubkey,
@@ -99,9 +100,12 @@ class Nostr {
 
   Future<Event?> sendEvent(Event event,
       {List<String>? tempRelays, List<String>? targetRelays}) async {
-    await signEvent(event);
+    // Only sign if the event is not already signed
     if (StringUtil.isBlank(event.sig)) {
-      return null;
+      await signEvent(event);
+      if (StringUtil.isBlank(event.sig)) {
+        return null;
+      }
     }
 
     var result = _pool.send(
@@ -288,5 +292,20 @@ class Nostr {
 
   bool isReadOnly() {
     return nostrSigner is PubkeyOnlyNostrSigner;
+  }
+
+  /// Configure a relay to always require authentication
+  void setRelayAlwaysAuth(String relayUrl, bool alwaysAuth) {
+    _pool.setRelayAlwaysAuth(relayUrl, alwaysAuth);
+  }
+
+  /// Configure multiple relays with authentication requirements
+  void configureRelayAuth(Map<String, bool> relayAuthConfig) {
+    _pool.configureRelayAuth(relayAuthConfig);
+  }
+
+  /// Get current authentication configuration for all relays
+  Map<String, bool> getRelayAuthConfig() {
+    return _pool.getRelayAuthConfig();
   }
 }

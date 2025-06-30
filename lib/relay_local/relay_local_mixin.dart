@@ -1,6 +1,5 @@
 import '../event_kind.dart';
 import 'relay_db.dart';
-import 'relay_local_db.dart';
 
 /// RelayLocalMixin is a mixin that provides methods to real handle events and queries.
 /// This mixin usually doesn't direct used. It is used by the other relay class, such RelayLocal and CacheRelay.

@@ -32,10 +32,10 @@ class NostrRemoteRequest {
 
         var id = jsonMap["id"];
         var method = jsonMap["method"];
-        var _params = jsonMap["params"];
+        var params0 = jsonMap["params"];
         List<String> params = [];
-        if (_params != null && _params is List) {
-          for (var param in _params) {
+        if (params0 != null && params0 is List) {
+          for (var param in params0) {
             params.add(param);
           }
         }

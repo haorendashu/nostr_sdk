@@ -17,6 +17,12 @@ class Filter {
   /// a list of pubkeys that are referenced in a "p" tag
   List<String>? p;
 
+  /// a list of hashtags that are referenced in a "t" tag
+  List<String>? t;
+
+  /// a list of values that are referenced in a "h" tag (vine.hol.is relay requirement)
+  List<String>? h;
+
   /// a timestamp, events must be newer than this to pass
   int? since;
 
@@ -33,6 +39,8 @@ class Filter {
       this.kinds,
       this.e,
       this.p,
+      this.t,
+      this.h,
       this.since,
       this.until,
       this.limit});
@@ -45,6 +53,8 @@ class Filter {
     kinds = json['kinds'] == null ? null : List<int>.from(json['kinds']);
     e = json['#e'] == null ? null : List<String>.from(json['#e']);
     p = json['#p'] == null ? null : List<String>.from(json['#p']);
+    t = json['#t'] == null ? null : List<String>.from(json['#t']);
+    h = json['#h'] == null ? null : List<String>.from(json['#h']);
     since = json['since'];
     until = json['until'];
     limit = json['limit'];
@@ -67,6 +77,12 @@ class Filter {
     }
     if (p != null) {
       data['#p'] = p;
+    }
+    if (t != null) {
+      data['#t'] = t;
+    }
+    if (h != null) {
+      data['#h'] = h;
     }
     if (since != null) {
       data['since'] = since;
@@ -99,6 +115,8 @@ class Filter {
 
     List<String> es = [];
     List<String> ps = [];
+    List<String> ts = [];
+    List<String> hs = [];
     for (var tag in event.tags) {
       if (tag is List && tag.length > 1) {
         var k = tag[0];
@@ -108,6 +126,10 @@ class Filter {
           es.add(v);
         } else if (k == "p") {
           ps.add(v);
+        } else if (k == "t") {
+          ts.add(v);
+        } else if (k == "h") {
+          hs.add(v);
         }
       }
     }
@@ -123,6 +145,20 @@ class Filter {
           return p!.contains(v);
         })))) {
       // filter query p but ps don't contains p.
+      return false;
+    }
+    if (t != null &&
+        (!(ts.any((v) {
+          return t!.contains(v);
+        })))) {
+      // filter query t but ts don't contains t.
+      return false;
+    }
+    if (h != null &&
+        (!(hs.any((v) {
+          return h!.contains(v);
+        })))) {
+      // filter query h but hs don't contains h.
       return false;
     }
 

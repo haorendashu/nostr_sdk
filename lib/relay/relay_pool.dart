@@ -152,9 +152,18 @@ class RelayPool {
 
     try {
       var message = subscription.toJson();
-      if (sendAfterAuth && !relay.relayStatus.authed) {
-        relay.pendingAuthedMessages.add(message);
-        return true;
+      if ((sendAfterAuth || relay.relayStatus.alwaysAuth) && !relay.relayStatus.authed) {
+        // For vine.hol.is, send the query to trigger AUTH challenge
+        if (relay.url.contains('vine.hol.is')) {
+          print('🔐 vine.hol.is query - sending to trigger AUTH challenge');
+          var result = relay.send(message, forceSend: true);
+          if (result) {
+            return true;
+          }
+        } else {
+          relay.pendingAuthedMessages.add(message);
+          return true;
+        }
       } else {
         if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
           return relay.send(message);
@@ -185,6 +194,8 @@ class RelayPool {
 
   Future<void> _onEvent(Relay relay, List<dynamic> json) async {
     final messageType = json[0];
+    print('📡 Raw message from ${relay.url}: $json');
+    
     if (messageType == 'EVENT') {
       try {
         if (relay is! RelayLocal &&
@@ -242,6 +253,7 @@ class RelayPool {
       }
 
       final subId = json[1] as String;
+      // EOSE received for subscription (debug logging removed)
       var isQuery = relay.checkAndCompleteQuery(subId);
       if (isQuery) {
         // is Query find if need to callback
@@ -264,7 +276,10 @@ class RelayPool {
           }
         }
       }
+    } else if (messageType == "OK") {
+      print('📡 OK response from ${relay.url}: $json');
     } else if (messageType == "NOTICE") {
+      print('📡 NOTICE from ${relay.url}: $json');
       if (json.length < 2) {
         log("NOTICE result not right.");
         return;
@@ -276,12 +291,14 @@ class RelayPool {
       }
     } else if (messageType == "AUTH") {
       // auth needed
+      print('🔐 AUTH challenge received from ${relay.url}');
       if (json.length < 2) {
         log("AUTH result not right.");
         return;
       }
 
       final challenge = json[1] as String;
+      print('🔐 Challenge: ${challenge.substring(0, 16)}...');
       var tags = [
         ["relay", relay.relayStatus.addr],
         ["challenge", challenge]
@@ -290,12 +307,21 @@ class RelayPool {
           Event(localNostr.publicKey, EventKind.AUTHENTICATION, tags, "");
       event = await localNostr.nostrSigner.signEvent(event);
       if (event != null) {
+        print('🔐 Sending AUTH response for challenge: ${challenge.substring(0, 16)}...');
         relay.send(["AUTH", event.toJson()], forceSend: true);
 
-        relay.relayStatus.authed = true;
+        // Note: Do NOT set authed = true here - wait for relay confirmation
+        // The relay needs to confirm our AUTH response before we can send pending messages
+        print('🔐 AUTH response sent, waiting for relay confirmation...');
 
         if (relay.pendingAuthedMessages.isNotEmpty) {
+          print('🔐 Pending ${relay.pendingAuthedMessages.length} messages for after auth confirmation');
           Future.delayed(const Duration(seconds: 1), () {
+            // TODO: This is a temporary workaround - we should wait for proper AUTH confirmation
+            // For now, assume AUTH succeeded after delay
+            relay.relayStatus.authed = true;
+            print('🔐 Assuming AUTH succeeded, sending ${relay.pendingAuthedMessages.length} pending messages');
+            
             for (var message in relay.pendingAuthedMessages) {
               relay.send(message);
             }
@@ -412,9 +438,18 @@ class RelayPool {
       relay.saveSubscription(subscription);
 
       var message = subscription.toJson();
-      if (sendAfterAuth && !relay.relayStatus.authed) {
-        relay.pendingAuthedMessages.add(message);
-        return true;
+      if ((sendAfterAuth || relay.relayStatus.alwaysAuth) && !relay.relayStatus.authed) {
+        // For vine.hol.is, send the subscription to trigger AUTH challenge
+        if (relay.url.contains('vine.hol.is')) {
+          print('🔐 vine.hol.is subscription - sending to trigger AUTH challenge');
+          var result = relay.send(message, forceSend: true);
+          if (result) {
+            return true;
+          }
+        } else {
+          relay.pendingAuthedMessages.add(message);
+          return true;
+        }
       } else {
         if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
           return relay.send(message);
@@ -606,9 +641,31 @@ class RelayPool {
       }
 
       try {
-        var result = relay.send(message);
-        if (result) {
-          hadSubmitSend = true;
+        // Check if relay requires authentication
+        if (relay.relayStatus.alwaysAuth && !relay.relayStatus.authed) {
+          print('🔐 Relay ${relay.url} requires auth (alwaysAuth=${relay.relayStatus.alwaysAuth}, authed=${relay.relayStatus.authed})');
+          
+          // For vine.hol.is, we need to send one message to trigger AUTH challenge
+          // Many relays only send AUTH challenges when they receive a message that needs auth
+          if (relay.url.contains('vine.hol.is')) {
+            print('🔐 vine.hol.is detected - sending message to trigger AUTH challenge');
+            var result = relay.send(message, forceSend: true);
+            if (result) {
+              hadSubmitSend = true;
+            }
+            // Don't queue this message since we're sending it
+          } else {
+            print('🔐 Queueing message for authentication: ${message[0]}');
+            relay.pendingAuthedMessages.add(message);
+            hadSubmitSend = true;
+          }
+          print('🔐 Pending authed messages count: ${relay.pendingAuthedMessages.length}');
+        } else {
+          print('🔐 Relay ${relay.url} sending immediately (alwaysAuth=${relay.relayStatus.alwaysAuth}, authed=${relay.relayStatus.authed})');
+          var result = relay.send(message);
+          if (result) {
+            hadSubmitSend = true;
+          }
         }
       } catch (err) {
         log(err.toString());
@@ -699,6 +756,30 @@ class RelayPool {
     }
 
     return false;
+  }
+
+  /// Configure a relay to always require authentication
+  void setRelayAlwaysAuth(String relayUrl, bool alwaysAuth) {
+    var relay = _relays[relayUrl];
+    if (relay != null) {
+      relay.relayStatus.alwaysAuth = alwaysAuth;
+    }
+  }
+
+  /// Configure multiple relays with authentication requirements
+  void configureRelayAuth(Map<String, bool> relayAuthConfig) {
+    relayAuthConfig.forEach((url, alwaysAuth) {
+      setRelayAlwaysAuth(url, alwaysAuth);
+    });
+  }
+
+  /// Get current authentication configuration for all relays
+  Map<String, bool> getRelayAuthConfig() {
+    Map<String, bool> config = {};
+    _relays.forEach((url, relay) {
+      config[url] = relay.relayStatus.alwaysAuth;
+    });
+    return config;
   }
 
   bool writable() {

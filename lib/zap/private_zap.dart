@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:hex/hex.dart';
 import 'package:nostr_sdk/event.dart';

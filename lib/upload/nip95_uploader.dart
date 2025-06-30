@@ -53,10 +53,10 @@ class NIP95Uploader {
       ["alt", "Binary data"],
     ];
 
-    var pubkey = nostr!.publicKey;
+    var pubkey = nostr.publicKey;
     var event =
         Event(pubkey, EventKind.STORAGE_SHARED_FILE, tags, base64Content);
 
-    return nostr!.sendEvent(event);
+    return nostr.sendEvent(event);
   }
 }

@@ -14,14 +14,14 @@ class GroupMetadata extends GroupObject {
   bool? open;
 
   GroupMetadata(
-    String groupId,
-    int createdAt, {
+    super.groupId,
+    super.createdAt, {
     this.name,
     this.picture,
     this.about,
     this.public,
     this.open,
-  }) : super(groupId, createdAt);
+  });
 
   static GroupMetadata? loadFromEvent(Event event) {
     String? groupId;

@@ -6,8 +6,7 @@ import 'group_object.dart';
 class GroupAdmins extends GroupObject {
   List<GroupAdminUser> users;
 
-  GroupAdmins(String groupId, int createdAt, this.users)
-      : super(groupId, createdAt);
+  GroupAdmins(super.groupId, super.createdAt, this.users);
 
   GroupAdminUser? contains(String pubkey) {
     for (var u in users) {

@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:pointycastle/export.dart';
-
 import '../event.dart';
 import '../event_kind.dart';
 import '../nip02/contact.dart';
@@ -14,13 +12,14 @@ class FollowSet extends ContactList {
 
   String? title;
 
-  Map<String, Contact> _publicContacts;
-  Map<String, int> _publicFollowedTags;
-  Map<String, int> _publicFollowedCommunitys;
-  Map<String, Contact> _privateContacts;
-  Map<String, int> _privateFollowedTags;
-  Map<String, int> _privateFollowedCommunitys;
+  final Map<String, Contact> _publicContacts;
+  final Map<String, int> _publicFollowedTags;
+  final Map<String, int> _publicFollowedCommunitys;
+  final Map<String, Contact> _privateContacts;
+  final Map<String, int> _privateFollowedTags;
+  final Map<String, int> _privateFollowedCommunitys;
 
+  @override
   int createdAt;
 
   FollowSet(
@@ -125,7 +124,7 @@ class FollowSet extends ContactList {
       // content and nostr not null, decrypt the content.
       try {
         var contentSource =
-            await nostr!.nostrSigner.decrypt(e.pubkey, e.content);
+            await nostr.nostrSigner.decrypt(e.pubkey, e.content);
         if (StringUtil.isNotBlank(contentSource)) {
           var jsonObj = jsonDecode(contentSource!);
           if (jsonObj is List) {

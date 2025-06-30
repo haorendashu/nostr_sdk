@@ -9,11 +9,11 @@ class GroupEventBox {
 
   GroupEventBox(this.groupIdentifier);
 
-  EventMemBox _noteBox = EventMemBox(sortAfterAdd: false);
+  final EventMemBox _noteBox = EventMemBox(sortAfterAdd: false);
 
-  EventMemBox _chatBox = EventMemBox(sortAfterAdd: false);
+  final EventMemBox _chatBox = EventMemBox(sortAfterAdd: false);
 
-  EventMemBox _notePenddingBox = EventMemBox(sortAfterAdd: false);
+  final EventMemBox _notePenddingBox = EventMemBox(sortAfterAdd: false);
 
   int get newestTime => _newestTime;
 
