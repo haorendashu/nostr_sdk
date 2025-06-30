@@ -10,7 +10,7 @@ A comprehensive Flutter/Dart SDK for building Nostr applications. This library p
 ## Why This SDK?
 
 This is one of the most feature-complete Nostr implementations available, offering:
-- **21 NIPs implemented** - One of the most comprehensive NIP coverage in any SDK
+- **22 NIPs implemented** - One of the most comprehensive NIP coverage in any SDK
 - **Production-ready architecture** - Sophisticated relay pooling, connection management, and error handling
 - **Advanced security** - Multiple signing strategies including hardware signers and remote signing
 - **Offline-first design** - Built-in SQLite caching and local relay support
@@ -21,7 +21,7 @@ This is one of the most feature-complete Nostr implementations available, offeri
 
 ### 🚀 Core Features
 - **Full Nostr Protocol Support**: Complete implementation of the Nostr event-based protocol
-- **21 NIPs Implemented**: One of the most comprehensive NIP coverage available
+- **22 NIPs Implemented**: One of the most comprehensive NIP coverage available
 - **Cross-Platform**: Support for Android, iOS, web, and desktop via Flutter
 - **Pluggable Signing**: Multiple signer implementations (local, remote, hardware)
 - **Relay Management**: Advanced relay pooling, connection management, and subscriptions
@@ -41,6 +41,7 @@ This is one of the most feature-complete Nostr implementations available, offeri
 | [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md) | bech32-encoded entities | ✅ |
 | [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content | ✅ |
 | [NIP-29](https://github.com/nostr-protocol/nips/blob/master/29.md) | Relay-based Groups | ✅ |
+| [NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md) | Authentication of clients to relays | ✅ |
 | [NIP-44](https://github.com/nostr-protocol/nips/blob/master/44.md) | Versioned Encryption | ✅ |
 | [NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) | Remote Signing | ✅ |
 | [NIP-47](https://github.com/nostr-protocol/nips/blob/master/47.md) | Wallet Connect | ✅ |
@@ -480,6 +481,44 @@ final encrypted = await signer.nip44Encrypt(recipientPubkey, 'Secret message');
 // Decrypt message
 final decrypted = await signer.nip44Decrypt(senderPubkey, encryptedMessage);
 ```
+
+### Relay Authentication (NIP-42)
+
+The SDK supports NIP-42 authentication for relays that require it. Authentication can be configured per-relay:
+
+```dart
+// Configure specific relay to always authenticate
+nostr.setRelayAlwaysAuth('wss://auth.relay.com', true);
+
+// Configure multiple relays at once
+nostr.configureRelayAuth({
+  'wss://auth.relay.com': true,      // Always authenticate
+  'wss://public.relay.com': false,   // No authentication required
+  'wss://premium.relay.com': true,   // Always authenticate
+});
+
+// Check current authentication configuration
+final authConfig = nostr.getRelayAuthConfig();
+print('Auth config: $authConfig');
+
+// When alwaysAuth is true, all messages (events, subscriptions, queries)
+// will be automatically queued until authentication is complete
+await nostr.sendEvent(event); // Will authenticate first if needed
+
+// You can also use sendAfterAuth for specific operations
+nostr.subscribe(
+  [Filter(kinds: [EventKind.TEXT_NOTE])],
+  (event) => print('Event: ${event.content}'),
+  sendAfterAuth: true, // Will wait for authentication
+);
+```
+
+**How it works:**
+- When a relay is configured with `alwaysAuth: true`, all messages are queued until authentication
+- The SDK automatically handles AUTH challenges from relays (reactive authentication)
+- Authentication events (kind 22242) are created and signed automatically
+- Messages are sent after successful authentication
+- Both proactive (alwaysAuth) and reactive (AUTH challenge) modes are supported
 
 ### File Uploads
 

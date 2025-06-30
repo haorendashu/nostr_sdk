@@ -10,10 +10,13 @@ class RelayStatus {
 
   bool readAccess;
 
+  bool alwaysAuth;
+
   RelayStatus(this.addr,
       {this.relayType = RelayType.NORMAL,
       this.writeAccess = true,
-      this.readAccess = true});
+      this.readAccess = true,
+      this.alwaysAuth = false});
 
   int connected = ClientConneccted.UN_CONNECT;
 

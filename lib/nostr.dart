@@ -31,6 +31,8 @@ class Nostr {
 
   String get publicKey => _publicKey;
 
+  RelayPool get relayPool => _pool;
+
   Future<Event?> sendLike(String id,
       {String? pubkey,
       String? content,
@@ -98,9 +100,12 @@ class Nostr {
 
   Future<Event?> sendEvent(Event event,
       {List<String>? tempRelays, List<String>? targetRelays}) async {
-    await signEvent(event);
+    // Only sign if the event is not already signed
     if (StringUtil.isBlank(event.sig)) {
-      return null;
+      await signEvent(event);
+      if (StringUtil.isBlank(event.sig)) {
+        return null;
+      }
     }
 
     var result = _pool.send(
@@ -287,5 +292,20 @@ class Nostr {
 
   bool isReadOnly() {
     return nostrSigner is PubkeyOnlyNostrSigner;
+  }
+
+  /// Configure a relay to always require authentication
+  void setRelayAlwaysAuth(String relayUrl, bool alwaysAuth) {
+    _pool.setRelayAlwaysAuth(relayUrl, alwaysAuth);
+  }
+
+  /// Configure multiple relays with authentication requirements
+  void configureRelayAuth(Map<String, bool> relayAuthConfig) {
+    _pool.configureRelayAuth(relayAuthConfig);
+  }
+
+  /// Get current authentication configuration for all relays
+  Map<String, bool> getRelayAuthConfig() {
+    return _pool.getRelayAuthConfig();
   }
 }
