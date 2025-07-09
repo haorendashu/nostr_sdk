@@ -656,7 +656,11 @@ class RelayPool {
 
     int sameNum = 0;
     for (var extralRelay in extralRelays) {
-      extralRelay = RelayAddrUtil.handle(extralRelay);
+      try {
+        extralRelay = RelayAddrUtil.handle(extralRelay);
+      } catch (e) {
+        print("handle relay addr error $e $extralRelay");
+      }
 
       var relay = _relays[extralRelay];
       if (relay == null || !relay.relayStatus.readAccess) {
