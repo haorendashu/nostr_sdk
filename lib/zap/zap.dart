@@ -56,10 +56,10 @@ class Zap {
     required String lnurl,
     required String lud16Link,
     required int sats,
-    required String recipientPubkey,
+    String? recipientPubkey,
     String? eventId,
-    required Nostr targetNostr,
-    required List<String> relays,
+    Nostr? targetNostr,
+    List<String>? relays,
     String? pollOption,
     String? comment,
   }) async {
@@ -91,27 +91,32 @@ class Zap {
       }
     }
 
-    var tags = [
-      ["relays", ...relays],
-      ["amount", amount.toString()],
-      ["lnurl", lnurl],
-      ["p", recipientPubkey],
-    ];
-    if (StringUtil.isNotBlank(eventId)) {
-      tags.add(["e", eventId!]);
+    if (StringUtil.isNotBlank(recipientPubkey) &&
+        relays != null &&
+        targetNostr != null) {
+      var tags = [
+        ["relays", ...relays],
+        ["amount", amount.toString()],
+        ["lnurl", lnurl],
+        ["p", recipientPubkey],
+      ];
+      if (StringUtil.isNotBlank(eventId)) {
+        tags.add(["e", eventId!]);
+      }
+      if (StringUtil.isNotBlank(pollOption)) {
+        tags.add(["poll_option", pollOption!]);
+      }
+      Event? event = Event(
+          targetNostr.publicKey, EventKind.ZAP_REQUEST, tags, eventContent);
+      event = await targetNostr.nostrSigner.signEvent(event);
+      if (event == null) {
+        return null;
+      }
+      log(jsonEncode(event));
+      var eventStr = Uri.encodeQueryComponent(jsonEncode(event));
+      callback += "&nostr=$eventStr";
     }
-    if (StringUtil.isNotBlank(pollOption)) {
-      tags.add(["poll_option", pollOption!]);
-    }
-    Event? event =
-        Event(targetNostr.publicKey, EventKind.ZAP_REQUEST, tags, eventContent);
-    event = await targetNostr.nostrSigner.signEvent(event);
-    if (event == null) {
-      return null;
-    }
-    log(jsonEncode(event));
-    var eventStr = Uri.encodeQueryComponent(jsonEncode(event));
-    callback += "&nostr=$eventStr";
+
     callback += "&lnurl=$lnurl";
 
     log("getInvoice callback $callback");
