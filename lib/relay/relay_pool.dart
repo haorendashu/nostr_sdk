@@ -589,6 +589,9 @@ class RelayPool {
   /// there are tempRelays, it also send to tempRelays too.
   bool send(List<dynamic> message,
       {List<String>? tempRelays, List<String>? targetRelays}) {
+    handleAddrList(tempRelays);
+    handleAddrList(targetRelays);
+
     bool hadSubmitSend = false;
 
     for (Relay relay in _relays.values) {
