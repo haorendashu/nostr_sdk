@@ -32,6 +32,8 @@ class EventKind {
 
   static const int PRIVATE_DIRECT_MESSAGE = 14;
 
+  static const int PRIVATE_FILE_MESSAGE = 15;
+
   static const int GENERIC_REPOST = 16;
 
   static const int PICTURE = 20;
