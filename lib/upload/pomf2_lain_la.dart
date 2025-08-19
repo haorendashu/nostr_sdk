@@ -15,7 +15,7 @@ class Pomf2LainLa {
     MultipartFile? multipartFile;
     if (BASE64.check(filePath)) {
       var bytes = BASE64.toData(filePath);
-      multipartFile = await MultipartFile.fromBytes(
+      multipartFile = MultipartFile.fromBytes(
         bytes,
         filename: fileName,
         contentType: MediaType.parse(fileType),
