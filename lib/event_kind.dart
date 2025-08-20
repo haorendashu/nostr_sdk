@@ -100,6 +100,8 @@ class EventKind {
 
   static const int FOLLOW_SETS = 30000;
 
+  static const int GENERIC_LISTS = 30001;
+
   static const int BADGE_ACCEPT = 30008;
 
   static const int BADGE_DEFINITION = 30009;
@@ -121,4 +123,8 @@ class EventKind {
   static const int GROUP_ADMINS = 39001;
 
   static const int GROUP_MEMBERS = 39002;
+
+  static const int STARTER_PACKS = 39089;
+
+  static const int MEDIA_STARTER_PACKS = 39092;
 }
