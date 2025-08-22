@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:nostr_sdk/nip19/nip19_tlv.dart';
 import 'package:pointycastle/export.dart';
 
 import '../event.dart';
@@ -14,11 +15,15 @@ class FollowSet extends ContactList {
 
   String pubkey;
 
+  int eventKind;
+
   String? title;
 
   String? image;
 
   String? description;
+
+  List<String> relays;
 
   Map<String, Contact> _publicContacts;
   Map<String, int> _publicFollowedTags;
@@ -29,6 +34,7 @@ class FollowSet extends ContactList {
 
   FollowSet(
     this.dTag,
+    this.eventKind,
     this.pubkey,
     Map<String, Contact> contacts,
     Map<String, int> followedTags,
@@ -43,6 +49,7 @@ class FollowSet extends ContactList {
     this.title,
     this.image,
     this.description,
+    this.relays = const [],
   }) : super(
           contacts: contacts,
           followedTags: followedTags,
@@ -110,6 +117,7 @@ class FollowSet extends ContactList {
 
     return FollowSet(
       dTag,
+      e.kind,
       e.pubkey,
       contacts,
       followedTags,
@@ -124,6 +132,7 @@ class FollowSet extends ContactList {
       title: title,
       image: image,
       description: description,
+      relays: e.sources,
     );
   }
 
@@ -164,6 +173,7 @@ class FollowSet extends ContactList {
 
     return FollowSet(
       publicFollowSet.dTag,
+      e.kind,
       e.pubkey,
       contacts,
       followedTags,
@@ -178,6 +188,7 @@ class FollowSet extends ContactList {
       title: publicFollowSet.title,
       image: publicFollowSet.image,
       description: publicFollowSet.description,
+      relays: e.sources,
     );
   }
 
@@ -264,5 +275,9 @@ class FollowSet extends ContactList {
 
   bool publicFollow(String pubkey) {
     return _publicContacts[pubkey] != null;
+  }
+
+  Naddr getNaddr() {
+    return Naddr(id: dTag, author: pubkey, kind: eventKind, relays: relays);
   }
 }
