@@ -12,7 +12,13 @@ import '../utils/string_util.dart';
 class FollowSet extends ContactList {
   String dTag;
 
+  String pubkey;
+
   String? title;
+
+  String? image;
+
+  String? description;
 
   Map<String, Contact> _publicContacts;
   Map<String, int> _publicFollowedTags;
@@ -21,10 +27,9 @@ class FollowSet extends ContactList {
   Map<String, int> _privateFollowedTags;
   Map<String, int> _privateFollowedCommunitys;
 
-  int createdAt;
-
   FollowSet(
     this.dTag,
+    this.pubkey,
     Map<String, Contact> contacts,
     Map<String, int> followedTags,
     Map<String, int> followedCommunitys,
@@ -34,12 +39,15 @@ class FollowSet extends ContactList {
     this._privateContacts,
     this._privateFollowedTags,
     this._privateFollowedCommunitys,
-    this.createdAt, {
+    int? createdAt, {
     this.title,
+    this.image,
+    this.description,
   }) : super(
           contacts: contacts,
           followedTags: followedTags,
           followedCommunitys: followedCommunitys,
+          createdAt: createdAt,
         );
 
   static String? getDTag(Event e) {
@@ -74,6 +82,8 @@ class FollowSet extends ContactList {
         e.tags, publicContacts, publicFollowedTags, publicFollowedCommunitys);
     String dTag = "";
     String? title;
+    String? image;
+    String? description;
     for (var tag in e.tags) {
       if (tag is List && tag.length > 1) {
         var k = tag[0];
@@ -83,6 +93,10 @@ class FollowSet extends ContactList {
           dTag = v;
         } else if (k == "title") {
           title = v;
+        } else if (k == "image") {
+          image = v;
+        } else if (k == "description") {
+          description = v;
         }
       }
     }
@@ -96,6 +110,7 @@ class FollowSet extends ContactList {
 
     return FollowSet(
       dTag,
+      e.pubkey,
       contacts,
       followedTags,
       followedCommunitys,
@@ -107,6 +122,8 @@ class FollowSet extends ContactList {
       privateFollowedCommunitys,
       e.createdAt,
       title: title,
+      image: image,
+      description: description,
     );
   }
 
@@ -147,6 +164,7 @@ class FollowSet extends ContactList {
 
     return FollowSet(
       publicFollowSet.dTag,
+      e.pubkey,
       contacts,
       followedTags,
       followedCommunitys,
@@ -158,16 +176,25 @@ class FollowSet extends ContactList {
       privateFollowedCommunitys,
       e.createdAt,
       title: publicFollowSet.title,
+      image: publicFollowSet.image,
+      description: publicFollowSet.description,
     );
   }
 
-  Future<Event?> toEventMap(Nostr nostr, String pubkey) async {
+  Future<Event?> toEventMap(Nostr nostr, String pubkey,
+      {int eventKind = EventKind.FOLLOW_SETS}) async {
     List<dynamic> tags = [];
     if (StringUtil.isNotBlank(dTag)) {
       tags.add(["d", dTag]);
     }
     if (StringUtil.isNotBlank(title)) {
       tags.add(["title", title]);
+    }
+    if (StringUtil.isNotBlank(image)) {
+      tags.add(["image", image]);
+    }
+    if (StringUtil.isNotBlank(description)) {
+      tags.add(["description", description]);
     }
     for (Contact contact in _publicContacts.values) {
       tags.add(["p", contact.publicKey, contact.url, contact.petname]);
@@ -196,7 +223,7 @@ class FollowSet extends ContactList {
       return null;
     }
 
-    return Event(pubkey, EventKind.FOLLOW_SETS, tags, content!);
+    return Event(pubkey, eventKind, tags, content!);
   }
 
   List<Contact> get publicContacts {
