@@ -13,7 +13,7 @@ dependencies:
   bip340: ^0.3.0
   hex: ^0.2.0
   string_validator: ^1.1.0
-  dio: 5.7.0
+  dio: ^5.9.0
   dio_cookie_manager: 3.1.1
   device_info_plus: ^10.1.0
   bech32: ^0.2.2
@@ -22,8 +22,8 @@ dependencies:
   # cryptography_flutter: ^2.3.2
   cryptography_flutter:
     git:
-        url: https://github.com/mvarendorff/cryptography
-        ref: fix/compatibility-agp-8x
+        url: https://github.com/haorendashu/cryptography
+        ref: remove_registrar
         path: cryptography_flutter
   synchronized: ^3.3.0+3
   web_socket_channel: ^3.0.2
