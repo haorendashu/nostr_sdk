@@ -93,7 +93,6 @@ class Event {
       throw ArgumentError("PoW difficulty can't be negative", 'difficulty');
     }
     if (difficulty > 0) {
-      final difficultyInBytes = (difficulty / 8).ceil();
       List<dynamic> result = [];
       for (List<dynamic> tag in tags) {
         result.add(tag);
@@ -105,7 +104,7 @@ class Event {
         const int nonceIndex = 1;
         tags.last[nonceIndex] = (++nonce).toString();
         id = _getId(pubkey, createdAt, kind, tags, content);
-      } while (_countLeadingZeroBytes(id) < difficultyInBytes);
+      } while (_countLeadingZeroBits(id) < difficulty);
     }
   }
 
@@ -152,16 +151,25 @@ class Event {
     return digest.toString();
   }
 
-  int _countLeadingZeroBytes(String eventId) {
+  int _countLeadingZeroBits(String eventId) {
     List<int> bytes = HEX.decode(eventId);
-    int zeros = 0;
-    for (int i = 0; i < bytes.length; i++) {
-      if (bytes[i] == 0) {
-        zeros = (i + 1);
+    int zeroBits = 0;
+    for (int byte in bytes) {
+      if (byte == 0) {
+        zeroBits += 8;
       } else {
+        int bits = 0;
+        for (int i = 7; i >= 0; i--) {
+          if ((byte >> i) & 1 == 0) {
+            bits++;
+          } else {
+            break;
+          }
+        }
+        zeroBits += bits;
         break;
       }
     }
-    return zeros;
+    return zeroBits;
   }
 }
