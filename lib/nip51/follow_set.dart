@@ -158,10 +158,19 @@ class FollowSet extends ContactList {
             ContactList.getContactInfoFromTags(jsonObj, privateContacts,
                 privateFollowedTags, privateFollowedCommunitys);
           }
+        } else {
+          // nip04 decrypt fail, try to decrypt with nip44.
+          var contentSource =
+              await nostr.nostrSigner.nip44Decrypt(e.pubkey, e.content);
+          if (StringUtil.isNotBlank(contentSource)) {
+            var jsonObj = jsonDecode(contentSource!);
+            if (jsonObj is List) {
+              ContactList.getContactInfoFromTags(jsonObj, privateContacts,
+                  privateFollowedTags, privateFollowedCommunitys);
+            }
+          }
         }
-      } catch (e) {
-        // sometimes would decode fail
-      }
+      } catch (e) {}
     }
 
     contacts.addAll(publicFollowSet._publicContacts);
