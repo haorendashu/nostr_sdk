@@ -84,6 +84,8 @@ class EventKind {
 
   static const int EMOJIS_LIST = 10030;
 
+  static const int INDEXER_RELAY_LIST = 10086;
+
   static const int NWC_INFO_EVENT = 13194;
 
   static const int AUTHENTICATION = 22242;

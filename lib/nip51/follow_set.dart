@@ -149,28 +149,29 @@ class FollowSet extends ContactList {
 
     if (StringUtil.isNotBlank(e.content) && nostr != null) {
       // content and nostr not null, decrypt the content.
+      String? contentSource;
       try {
-        var contentSource =
-            await nostr!.nostrSigner.decrypt(e.pubkey, e.content);
-        if (StringUtil.isNotBlank(contentSource)) {
-          var jsonObj = jsonDecode(contentSource!);
-          if (jsonObj is List) {
-            ContactList.getContactInfoFromTags(jsonObj, privateContacts,
-                privateFollowedTags, privateFollowedCommunitys);
-          }
-        } else {
-          // nip04 decrypt fail, try to decrypt with nip44.
-          var contentSource =
-              await nostr.nostrSigner.nip44Decrypt(e.pubkey, e.content);
-          if (StringUtil.isNotBlank(contentSource)) {
-            var jsonObj = jsonDecode(contentSource!);
-            if (jsonObj is List) {
-              ContactList.getContactInfoFromTags(jsonObj, privateContacts,
-                  privateFollowedTags, privateFollowedCommunitys);
-            }
-          }
+        contentSource =
+            await nostr.nostrSigner.nip44Decrypt(e.pubkey, e.content);
+      } catch (err) {
+        print("FollowSet event content nip44Decrypt error ${err.toString()}");
+      }
+
+      if (StringUtil.isBlank(contentSource)) {
+        try {
+          contentSource = await nostr.nostrSigner.decrypt(e.pubkey, e.content);
+        } catch (err) {
+          print("FollowSet event content decrypt error ${err.toString()}");
         }
-      } catch (e) {}
+      }
+
+      if (StringUtil.isNotBlank(contentSource)) {
+        var jsonObj = jsonDecode(contentSource!);
+        if (jsonObj is List) {
+          ContactList.getContactInfoFromTags(jsonObj, privateContacts,
+              privateFollowedTags, privateFollowedCommunitys);
+        }
+      }
     }
 
     contacts.addAll(publicFollowSet._publicContacts);
