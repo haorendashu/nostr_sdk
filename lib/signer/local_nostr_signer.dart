@@ -18,14 +18,22 @@ class LocalNostrSigner implements NostrSigner {
 
   @override
   Future<String?> decrypt(pubkey, ciphertext) async {
-    var agreement = getAgreement();
-    return NIP04.decrypt(ciphertext, agreement, pubkey);
+    try {
+      var agreement = getAgreement();
+      return NIP04.decrypt(ciphertext, agreement, pubkey);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
   Future<String?> encrypt(pubkey, plaintext) async {
-    var agreement = getAgreement();
-    return NIP04.encrypt(plaintext, agreement, pubkey);
+    try {
+      var agreement = getAgreement();
+      return NIP04.encrypt(plaintext, agreement, pubkey);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
@@ -40,8 +48,12 @@ class LocalNostrSigner implements NostrSigner {
 
   @override
   Future<Event?> signEvent(Event event) async {
-    event.sign(_privateKey);
-    return event;
+    try {
+      event.sign(_privateKey);
+      return event;
+    } catch (e) {
+      return null;
+    }
   }
 
   ECDHBasicAgreement getAgreement() {
@@ -51,14 +63,22 @@ class LocalNostrSigner implements NostrSigner {
 
   @override
   Future<String?> nip44Decrypt(pubkey, ciphertext) async {
-    var sealKey = NIP44V2.shareSecret(_privateKey, pubkey);
-    return await NIP44V2.decrypt(ciphertext, sealKey);
+    try {
+      var sealKey = NIP44V2.shareSecret(_privateKey, pubkey);
+      return await NIP44V2.decrypt(ciphertext, sealKey);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
   Future<String?> nip44Encrypt(pubkey, plaintext) async {
-    var conversationKey = NIP44V2.shareSecret(_privateKey, pubkey);
-    return await NIP44V2.encrypt(plaintext, conversationKey);
+    try {
+      var conversationKey = NIP44V2.shareSecret(_privateKey, pubkey);
+      return await NIP44V2.encrypt(plaintext, conversationKey);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
