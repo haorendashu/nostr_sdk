@@ -99,7 +99,9 @@ class Nostr {
 
   Future<Event?> sendEvent(Event event,
       {List<String>? tempRelays, List<String>? targetRelays}) async {
-    await signEvent(event);
+    if (StringUtil.isBlank(event.sig)) {
+      await signEvent(event);
+    }
     if (StringUtil.isBlank(event.sig)) {
       return null;
     }
