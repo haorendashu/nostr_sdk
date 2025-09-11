@@ -44,6 +44,8 @@ class EventRelation {
 
   String? type;
 
+  int? pow;
+
   List<EventZapInfo> zapInfos = [];
 
   String? innerZapContent;
@@ -154,6 +156,8 @@ class EventRelation {
           rootPubkey = value;
         } else if (tagKey == "p") {
           replyPubkey = value;
+        } else if (tagKey == "nonce" && tagLength > 2) {
+          pow = int.tryParse(tag[2]);
         } else if (isComment) {
           if (tagKey == "A" || tagKey == "E" || tagKey == "I") {
             if (tagKey == "A") {
