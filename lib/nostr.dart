@@ -33,10 +33,7 @@ class Nostr {
   String get publicKey => _publicKey;
 
   Future<Event?> sendLike(String id,
-      {String? pubkey,
-      String? content,
-      List<String>? tempRelays,
-      List<String>? targetRelays}) async {
+      {String? pubkey, String? content, List<String>? targetRelays}) async {
     content ??= "+";
 
     Event event = Event(
@@ -46,12 +43,11 @@ class Nostr {
           ["e", id]
         ],
         content);
-    return await sendEvent(event,
-        tempRelays: tempRelays, targetRelays: targetRelays);
+    return await sendEvent(event, targetRelays: targetRelays);
   }
 
   Future<Event?> deleteEvent(String eventId,
-      {List<String>? tempRelays, List<String>? targetRelays}) async {
+      {List<String>? targetRelays}) async {
     Event event = Event(
         _publicKey,
         EventKind.EVENT_DELETION,
@@ -59,46 +55,44 @@ class Nostr {
           ["e", eventId]
         ],
         "delete");
-    return await sendEvent(event,
-        tempRelays: tempRelays, targetRelays: targetRelays);
+    return await sendEvent(event, targetRelays: targetRelays);
   }
 
   Future<Event?> deleteEvents(List<String> eventIds,
-      {List<String>? tempRelays, List<String>? targetRelays}) async {
+      {List<String>? targetRelays}) async {
     List<List<dynamic>> tags = [];
     for (var eventId in eventIds) {
       tags.add(["e", eventId]);
     }
 
     Event event = Event(_publicKey, EventKind.EVENT_DELETION, tags, "delete");
-    return await sendEvent(event,
-        tempRelays: tempRelays, targetRelays: targetRelays);
+    return await sendEvent(event, targetRelays: targetRelays);
   }
 
   Future<Event?> sendRepost(String id,
       {String? relayAddr,
       String content = "",
-      List<String>? tempRelays,
       List<String>? targetRelays}) async {
     List<dynamic> tag = ["e", id];
     if (StringUtil.isNotBlank(relayAddr)) {
       tag.add(relayAddr);
     }
     Event event = Event(_publicKey, EventKind.REPOST, [tag], content);
-    return await sendEvent(event,
-        tempRelays: tempRelays, targetRelays: targetRelays);
+    return await sendEvent(event, targetRelays: targetRelays);
   }
 
   Future<Event?> sendContactList(ContactList contacts, String content,
-      {List<String>? tempRelays, List<String>? targetRelays}) async {
+      {List<String>? targetRelays}) async {
     final tags = contacts.toJson();
     final event = Event(_publicKey, EventKind.CONTACT_LIST, tags, content);
-    return await sendEvent(event,
-        tempRelays: tempRelays, targetRelays: targetRelays);
+    return await sendEvent(event, targetRelays: targetRelays);
   }
 
-  Future<Event?> sendEvent(Event event,
-      {List<String>? tempRelays, List<String>? targetRelays}) async {
+  Future<Event?> sendEvent(
+    Event event, {
+    List<String>? targetRelays,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
+  }) async {
     if (StringUtil.isBlank(event.sig)) {
       await signEvent(event);
     }
@@ -108,8 +102,9 @@ class Nostr {
 
     var result = _pool.send(
       ["EVENT", event.toJson()],
-      tempRelays: tempRelays,
       targetRelays: targetRelays,
+      relayTypes: relayTypes,
+      bothRelay: true,
     );
     if (result) {
       return event;
@@ -131,12 +126,15 @@ class Nostr {
     }
   }
 
-  Event? broadcase(Event event,
-      {List<String>? tempRelays, List<String>? targetRelays}) {
+  Event? broadcase(
+    Event event, {
+    List<String>? targetRelays,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
+  }) {
     var result = _pool.send(
       ["EVENT", event.toJson()],
-      tempRelays: tempRelays,
       targetRelays: targetRelays,
+      relayTypes: relayTypes,
     );
     if (result) {
       return event;
@@ -154,17 +152,16 @@ class Nostr {
     _pool.addInitQuery(filters, onEvent, id: id, onComplete: onComplete);
   }
 
-  bool tempRelayHasSubscription(String relayAddr) {
-    return _pool.tempRelayHasSubscription(relayAddr);
-  }
+  // bool tempRelayHasSubscription(String relayAddr) {
+  //   return _pool.tempRelayHasSubscription(relayAddr);
+  // }
 
   String subscribe(
     List<Map<String, dynamic>> filters,
     Function(Event) onEvent, {
     String? id,
-    List<String>? tempRelays,
     List<String>? targetRelays,
-    List<int> relayTypes = RelayType.ALL,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth =
         false, // if relay not connected, it will send after auth
   }) {
@@ -172,7 +169,6 @@ class Nostr {
       filters,
       onEvent,
       id: id,
-      tempRelays: tempRelays,
       targetRelays: targetRelays,
       relayTypes: relayTypes,
       sendAfterAuth: sendAfterAuth,
@@ -186,8 +182,8 @@ class Nostr {
   Future<List<Event>> queryEvents(
     List<Map<String, dynamic>> filters, {
     String? id,
-    List<String>? tempRelays,
-    List<int> relayTypes = RelayType.ALL,
+    List<String>? targetRelays,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth = false,
   }) async {
     var eventBox = EventMemBox(sortAfterAdd: false);
@@ -196,7 +192,7 @@ class Nostr {
     query(
       filters,
       id: id,
-      tempRelays: tempRelays,
+      targetRelays: targetRelays,
       relayTypes: relayTypes,
       sendAfterAuth: sendAfterAuth,
       (event) {
@@ -216,20 +212,20 @@ class Nostr {
     Function(Event) onEvent, {
     String? id,
     Function? onComplete,
-    List<String>? tempRelays,
     List<String>? targetRelays,
-    List<int> relayTypes = RelayType.ALL,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth = false,
+    bool bothRelay = false,
   }) {
     return _pool.query(
       filters,
       onEvent,
       id: id,
       onComplete: onComplete,
-      tempRelays: tempRelays,
       targetRelays: targetRelays,
       relayTypes: relayTypes,
       sendAfterAuth: sendAfterAuth,
+      bothRelay: bothRelay,
     );
   }
 
@@ -250,20 +246,20 @@ class Nostr {
         autoSubscribe: autoSubscribe, init: init, relayType: relayType);
   }
 
-  void removeRelay(String url, {int relayType = RelayType.NORMAL}) {
-    _pool.remove(url, relayType: relayType);
+  void removeRelay(String url) {
+    _pool.remove(url);
   }
 
-  List<Relay> activeRelays() {
-    return _pool.activeRelays();
+  List<Relay> normalRelays() {
+    return _pool.normalRelays();
   }
+
+  // List<Relay> activeRelays() {
+  //   return _pool.activeRelays();
+  // }
 
   Relay? getRelay(String url) {
     return _pool.getRelay(url);
-  }
-
-  Relay? getTempRelay(String url) {
-    return _pool.getTempRelay(url);
   }
 
   void reconnect() {
@@ -274,10 +270,6 @@ class Nostr {
   List<String> getExtralReadableRelays(
       List<String> extralRelays, int maxRelayNum) {
     return _pool.getExtralReadableRelays(extralRelays, maxRelayNum);
-  }
-
-  void removeTempRelay(String addr) {
-    _pool.removeTempRelay(addr);
   }
 
   bool readable() {

@@ -27,19 +27,16 @@ class RelayPool {
 
   Nostr localNostr;
 
-  final Map<String, Relay> _tempRelays = {};
+  Map<String, Relay> _allRelays = {};
 
-  final Map<String, Relay> _relays = {};
-
-  final Map<String, Relay> _cacheRelays = {};
+  // key - value : relayType - relayAddrs
+  Map<int, List<String>> _relayTypesMap = {};
 
   // subscription
   final Map<String, Subscription> _subscriptions = {};
 
   // init query
   final Map<String, Subscription> _initQuery = {};
-
-  final Map<String, Function> _queryCompleteCallbacks = {};
 
   RelayLocal? relayLocal;
 
@@ -62,19 +59,11 @@ class RelayPool {
     bool init = false,
     int relayType = RelayType.NORMAL,
   }) async {
-    if (relayType == RelayType.NORMAL) {
-      if (_relays.containsKey(relay.url)) {
-        return true;
-      } else {
-        _relays[relay.url] = relay;
-      }
-    } else if (relayType == RelayType.CACHE) {
-      if (_cacheRelays.containsKey(relay.url)) {
-        return true;
-      } else {
-        _cacheRelays[relay.url] = relay;
-      }
-    }
+    var relayAddr = relay.url;
+    var relayAddrs = _relayTypesMap[relayType] ?? [];
+    relayAddrs.add(relayAddr);
+    _relayTypesMap[relayType] = relayAddrs;
+    _allRelays[relayAddr] = relay;
 
     relay.onMessage = _onEvent;
     if (relay is RelayLocal) {
@@ -102,41 +91,56 @@ class RelayPool {
     return false;
   }
 
-  List<Relay> activeRelays() {
+  List<Relay> normalRelays() {
     List<Relay> list = [];
-    var it = _relays.values;
-    for (var relay in it) {
-      if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
+    var relayAddrList = _relayTypesMap[RelayType.NORMAL] ?? [];
+    for (var relayAddr in relayAddrList) {
+      var relay = _allRelays[relayAddr];
+      if (relay != null) {
         list.add(relay);
       }
     }
     return list;
   }
 
+  // List<Relay> activeRelays() {
+  //   List<Relay> list = [];
+  //   var it = _relays.values;
+  //   for (var relay in it) {
+  //     if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
+  //       list.add(relay);
+  //     }
+  //   }
+  //   return list;
+  // }
+
   void removeAll() {
-    var keys = _relays.keys;
-    for (var url in keys) {
-      _relays[url]?.disconnect();
-      _relays[url]?.dispose();
+    var allRelays = _allRelays.values;
+    for (var relay in allRelays) {
+      relay.disconnect();
+      relay.dispose();
     }
-    _relays.clear();
+
+    _allRelays.clear();
+    _subscriptions.clear();
+    _initQuery.clear();
   }
 
-  void remove(String url, {int relayType = RelayType.NORMAL}) {
+  void remove(String url) {
     log('Removing $url');
-    if (relayType == RelayType.NORMAL) {
-      _relays[url]?.disconnect();
-      _relays[url]?.dispose();
-      _relays.remove(url);
-    } else if (relayType == RelayType.CACHE) {
-      _cacheRelays[url]?.disconnect();
-      _cacheRelays[url]?.dispose();
-      _cacheRelays.remove(url);
+    var relay = _allRelays.remove(url);
+    if (relay != null) {
+      relay.disconnect();
+      relay.dispose();
+
+      for (var relayAddrs in _relayTypesMap.values) {
+        relayAddrs.remove(url);
+      }
     }
   }
 
   Relay? getRelay(String url) {
-    return _relays[url];
+    return _allRelays[url];
   }
 
   bool relayDoQuery(Relay relay, Subscription subscription, bool sendAfterAuth,
@@ -147,7 +151,7 @@ class RelayPool {
       return false;
     }
 
-    relay.saveQuery(subscription);
+    subscription.addQueryingRelay(relay.url);
     relay.relayStatus.onQuery();
 
     try {
@@ -176,9 +180,14 @@ class RelayPool {
       relayLocal!.broadcaseToLocal(event);
     }
 
-    for (var relay in _cacheRelays.values) {
-      if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
-        relay.send(["EVENT", event]);
+    var relayAddrs = _relayTypesMap[RelayType.CACHE];
+    if (relayAddrs != null) {
+      for (var relayAddr in relayAddrs) {
+        var relay = _allRelays[relayAddr];
+        if (relay != null &&
+            relay.relayStatus.connected == ClientConneccted.CONNECTED) {
+          relay.send(["EVENT", event]);
+        }
       }
     }
   }
@@ -228,9 +237,6 @@ class RelayPool {
 
         if (subscription != null) {
           subscription.onEvent(event);
-        } else {
-          subscription = relay.getRequestSubscription(subId);
-          subscription?.onEvent(event);
         }
       } catch (err) {
         log(err.toString());
@@ -242,25 +248,19 @@ class RelayPool {
       }
 
       final subId = json[1] as String;
-      var isQuery = relay.checkAndCompleteQuery(subId);
-      if (isQuery) {
-        // is Query find if need to callback
-        var callback = _queryCompleteCallbacks[subId];
-        if (callback != null) {
-          // need to callback, check if all relay complete query
-          List<Relay> list = [..._relays.values];
-          list.addAll(_tempRelays.values);
-          bool completeQuery = true;
-          for (var r in list) {
-            if (r.checkQuery(subId)) {
-              // this relay hadn't compltete query
-              completeQuery = false;
-              break;
-            }
-          }
-          if (completeQuery) {
-            callback();
-            _queryCompleteCallbacks.remove(subId);
+      var subscription = _subscriptions[subId];
+      if (subscription != null && !subscription.isSubscription) {
+        // subscription needn't handle EOSE.
+        // This is a query, close when eose received
+        relay.send(["CLOSE", subId]);
+
+        subscription.relayCompleteQuery(relay.url);
+        if (subscription.onComplete != null) {
+          // all query completed, remove subscription
+          _subscriptions.remove(subId);
+          if (subscription.isCompleted()) {
+            // all query completed, call onComplete
+            subscription.onComplete!();
           }
         }
       }
@@ -320,11 +320,10 @@ class RelayPool {
       throw ArgumentError("No filters given", "filters");
     }
 
-    final Subscription subscription = Subscription(filters, onEvent, id);
+    final Subscription subscription =
+        Subscription(filters, onEvent, id: id, onComplete: onComplete);
     _initQuery[subscription.id] = subscription;
-    if (onComplete != null) {
-      _queryCompleteCallbacks[subscription.id] = onComplete;
-    }
+    _subscriptions[subscription.id] = subscription;
   }
 
   /// subscribe shoud be a long time filter search.
@@ -335,63 +334,26 @@ class RelayPool {
     List<Map<String, dynamic>> filters,
     Function(Event) onEvent, {
     String? id,
-    List<String>? tempRelays,
+    // List<String>? tempRelays,
     List<String>? targetRelays,
-    List<int> relayTypes = RelayType.ALL,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth =
         false, // if relay not connected, it will send after auth
+    bool bothRelay = false,
   }) {
     if (filters.isEmpty) {
       throw ArgumentError("No filters given", "filters");
     }
 
-    handleAddrList(tempRelays);
     handleAddrList(targetRelays);
 
-    final Subscription subscription = Subscription(filters, onEvent, id);
+    final Subscription subscription = Subscription(filters, onEvent, id: id);
     _subscriptions[subscription.id] = subscription;
     // send(subscription.toJson());
 
-    // tempRelay, only query those relay which has bean provide
-    if (tempRelays != null &&
-        tempRelays.isNotEmpty &&
-        relayTypes.contains(RelayType.TEMP)) {
-      for (var tempRelayAddr in tempRelays) {
-        // check if normal relays has this temp relay, try to get relay from normal relays
-        Relay? relay = _relays[tempRelayAddr];
-        relay ??= checkAndGenTempRelay(tempRelayAddr);
-
-        relayDoSubscribe(relay, subscription, sendAfterAuth,
-            runBeforeConnected: true);
-      }
-    }
-
-    // normal relay, usually will query all the normal relays, but if targetRelays has provide, it only query from the provided querys.
-    if (relayTypes.contains(RelayType.NORMAL)) {
-      for (var entry in _relays.entries) {
-        var relayAddr = entry.key;
-        var relay = entry.value;
-
-        if (targetRelays != null) {
-          if (!targetRelays.contains(relayAddr)) {
-            continue;
-          }
-        }
-
-        relayDoSubscribe(relay, subscription, sendAfterAuth);
-      }
-    }
-
-    // cache relay
-    if (relayTypes.contains(RelayType.CACHE)) {
-      for (var relay in _cacheRelays.values) {
-        relayDoSubscribe(relay, subscription, sendAfterAuth);
-      }
-    }
-
-    // local relay
-    if (relayTypes.contains(RelayType.LOCAL) && relayLocal != null) {
-      relayDoSubscribe(relayLocal!, subscription, sendAfterAuth);
+    var currentRelays = findRelays(targetRelays, relayTypes, both: bothRelay);
+    for (var relay in currentRelays) {
+      relayDoSubscribe(relay, subscription, sendAfterAuth);
     }
 
     return subscription.id;
@@ -410,6 +372,7 @@ class RelayPool {
 
     try {
       relay.saveSubscription(subscription);
+      subscription.addQueryingRelay(relay.url);
 
       var message = subscription.toJson();
       if (sendAfterAuth && !relay.relayStatus.authed) {
@@ -431,48 +394,24 @@ class RelayPool {
     return false;
   }
 
-  bool tempRelayHasSubscription(String relayAddr) {
-    var relay = _tempRelays[relayAddr];
-    if (relay != null) {
-      return relay.hasSubscription();
-    }
+  // bool tempRelayHasSubscription(String relayAddr) {
+  //   var relay = _tempRelays[relayAddr];
+  //   if (relay != null) {
+  //     return relay.hasSubscription();
+  //   }
 
-    return false;
-  }
+  //   return false;
+  // }
 
   void unsubscribe(String id) {
     final subscription = _subscriptions.remove(id);
-    if (subscription != null) {
-      // check query and send close
-      var it = _relays.values;
-      for (var relay in it) {
-        relay.checkAndCompleteSubscription(id);
-      }
-
-      it = _tempRelays.values;
-      for (var relay in it) {
-        relay.checkAndCompleteSubscription(id);
-      }
-
-      it = _cacheRelays.values;
-      for (var relay in it) {
-        relay.checkAndCompleteSubscription(id);
-      }
-    } else {
-      // check query and send close
-      var it = _relays.values;
-      for (var relay in it) {
-        relay.checkAndCompleteQuery(id);
-      }
-
-      it = _tempRelays.values;
-      for (var relay in it) {
-        relay.checkAndCompleteQuery(id);
-      }
-
-      it = _cacheRelays.values;
-      for (var relay in it) {
-        relay.checkAndCompleteQuery(id);
+    if (subscription != null && subscription.queryingRelays.isNotEmpty) {
+      for (var relayAddr in subscription.queryingRelays) {
+        var relay = _allRelays[relayAddr];
+        if (relay != null) {
+          relay.removeSubscription(id);
+          relay.send(["CLOSE", id]);
+        }
       }
     }
   }
@@ -485,17 +424,24 @@ class RelayPool {
       throw ArgumentError("No filters given", "filters");
     }
     id ??= StringUtil.rndNameStr(16);
-    if (onComplete != null) {
-      _queryCompleteCallbacks[id] = onComplete;
+
+    if (filtersMap.isEmpty) {
+      return id;
     }
+
+    var filters = filtersMap.entries.first.value;
+    Subscription subscription =
+        Subscription(filters, onEvent, id: id, onComplete: onComplete);
+    _subscriptions[subscription.id] = subscription;
+
     var entries = filtersMap.entries;
     for (var entry in entries) {
       var url = entry.key;
       var filters = entry.value;
 
-      var relay = _relays[url];
+      var relay = _allRelays[url];
       if (relay != null) {
-        Subscription subscription = Subscription(filters, onEvent, id);
+        subscription.filters = filters;
         relayDoQuery(relay, subscription, false);
       }
     }
@@ -512,6 +458,41 @@ class RelayPool {
     }
   }
 
+  List<Relay> findRelays(List<String>? targetRelays, List<int>? relayTypes,
+      {bool both = false}) {
+    List<String> findedAddrList = [];
+
+    if (((targetRelays == null || targetRelays.isEmpty) || both == true) &&
+        (relayTypes != null && relayTypes.isNotEmpty)) {
+      for (var relayType in relayTypes) {
+        if (relayType != RelayType.TEMP) {
+          var relayAddrList = _relayTypesMap[relayType];
+          if (relayAddrList != null && relayAddrList.isNotEmpty) {
+            for (var relayAddr in relayAddrList) {
+              if (!findedAddrList.contains(relayAddr)) {
+                findedAddrList.add(relayAddr);
+              }
+            }
+          }
+        }
+      }
+    }
+    if (targetRelays != null && targetRelays.isNotEmpty) {
+      for (var relayAddr in targetRelays) {
+        if (!findedAddrList.contains(relayAddr)) {
+          findedAddrList.add(relayAddr);
+        }
+      }
+    }
+
+    List<Relay> relays = [];
+    for (var relayAddr in findedAddrList) {
+      relays.add(checkOrGenTempRelay(relayAddr));
+    }
+
+    return relays;
+  }
+
   /// query should be a one time filter search.
   /// like: query metadata, query old event.
   /// query info will hold in relay and close in relay when EOSE message be received.
@@ -522,64 +503,29 @@ class RelayPool {
     Function(Event) onEvent, {
     String? id,
     Function? onComplete,
-    List<String>? tempRelays,
     List<String>? targetRelays,
-    List<int> relayTypes = RelayType.ALL,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth =
         false, // if relay not connected, it will send after auth
+    bool bothRelay = false,
   }) {
     if (filters.isEmpty) {
       throw ArgumentError("No filters given", "filters");
     }
 
-    handleAddrList(tempRelays);
     handleAddrList(targetRelays);
 
-    Subscription subscription = Subscription(filters, onEvent, id);
-    if (onComplete != null) {
-      _queryCompleteCallbacks[subscription.id] = onComplete;
+    Subscription subscription =
+        Subscription(filters, onEvent, id: id, onComplete: onComplete);
+    _subscriptions[subscription.id] = subscription;
+
+    var currentRelays = findRelays(targetRelays, relayTypes, both: bothRelay);
+    if (currentRelays.isEmpty) {
+      print("findRelay is empty");
+      print(subscription.toJson());
     }
-
-    // tempRelay, only query those relay which has bean provide
-    if (tempRelays != null &&
-        tempRelays.isNotEmpty &&
-        relayTypes.contains(RelayType.TEMP)) {
-      for (var tempRelayAddr in tempRelays) {
-        // check if normal relays has this temp relay, try to get relay from normal relays
-        Relay? relay = _relays[tempRelayAddr];
-        relay ??= checkAndGenTempRelay(tempRelayAddr);
-
-        relayDoQuery(relay, subscription, sendAfterAuth,
-            runBeforeConnected: true);
-      }
-    }
-
-    // normal relay, usually will query all the normal relays, but if targetRelays has provide, it only query from the provided querys.
-    if (relayTypes.contains(RelayType.NORMAL)) {
-      for (var entry in _relays.entries) {
-        var relayAddr = entry.key;
-        var relay = entry.value;
-
-        if (targetRelays != null) {
-          if (!targetRelays.contains(relayAddr)) {
-            continue;
-          }
-        }
-
-        relayDoQuery(relay, subscription, sendAfterAuth);
-      }
-    }
-
-    // cache relay
-    if (relayTypes.contains(RelayType.CACHE)) {
-      for (var relay in _cacheRelays.values) {
-        relayDoQuery(relay, subscription, sendAfterAuth);
-      }
-    }
-
-    // local relay
-    if (relayTypes.contains(RelayType.LOCAL) && relayLocal != null) {
-      relayDoQuery(relayLocal!, subscription, sendAfterAuth);
+    for (var relay in currentRelays) {
+      relayDoQuery(relay, subscription, sendAfterAuth);
     }
 
     return subscription.id;
@@ -587,118 +533,85 @@ class RelayPool {
 
   /// send message to relay
   /// there are tempRelays, it also send to tempRelays too.
-  bool send(List<dynamic> message,
-      {List<String>? tempRelays, List<String>? targetRelays}) {
-    handleAddrList(tempRelays);
+  bool send(
+    List<dynamic> message, {
+    List<String>? targetRelays,
+    List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
+    bool bothRelay = false,
+  }) {
     handleAddrList(targetRelays);
 
-    bool hadSubmitSend = false;
+    int submitedNum = 0;
 
-    for (Relay relay in _relays.values) {
-      if (message[0] == "EVENT") {
-        if (!relay.relayStatus.writeAccess) {
-          continue;
-        }
-      }
-
-      if (targetRelays != null && targetRelays.isNotEmpty) {
-        if (!targetRelays.contains(relay.url)) {
-          // not contain this relay
-          continue;
-        }
-      }
-
-      try {
-        var result = relay.send(message);
-        if (result) {
-          hadSubmitSend = true;
-        }
-      } catch (err) {
-        log(err.toString());
-        relay.relayStatus.onError();
+    var currentRelays =
+        findRelays(targetRelays, RelayType.NORMAL_AND_CACHE, both: true);
+    for (var relay in currentRelays) {
+      if (relay.relayStatus.connected == ClientConneccted.CONNECTED) {
+        relay.send(message);
+        submitedNum++;
+      } else {
+        relay.pendingMessages.add(message);
+        submitedNum++;
       }
     }
 
-    if (tempRelays != null) {
-      for (var tempRelayAddr in tempRelays) {
-        var tempRelay = checkAndGenTempRelay(tempRelayAddr);
-        if (tempRelay.relayStatus.connected == ClientConneccted.CONNECTED) {
-          tempRelay.send(message);
-          hadSubmitSend = true;
-        } else {
-          tempRelay.pendingMessages.add(message);
-          hadSubmitSend = true;
-        }
-      }
-    }
-
-    return hadSubmitSend;
+    return submitedNum > 0;
   }
 
   void reconnect() {
-    for (var relay in _relays.values) {
+    for (var relay in _allRelays.values) {
       relay.connect();
     }
   }
 
-  Relay checkAndGenTempRelay(String addr) {
-    var tempRelay = _tempRelays[addr];
-    if (tempRelay == null) {
-      tempRelay = tempRelayGener(addr);
-      tempRelay.onMessage = _onEvent;
-      tempRelay.connect();
-      _tempRelays[addr] = tempRelay;
+  // check if there is a relay exist or gen a temp relay.
+  Relay checkOrGenTempRelay(String addr) {
+    var relay = _allRelays[addr];
+    if (relay == null) {
+      relay = tempRelayGener(addr);
+      relay.onMessage = _onEvent;
+      relay.connect();
+      _allRelays[addr] = relay;
+
+      _relayTypesMap[RelayType.TEMP] = _relayTypesMap[RelayType.TEMP] ?? [];
+      _relayTypesMap[RelayType.TEMP]!.add(addr);
     }
 
-    return tempRelay;
+    return relay;
   }
 
   List<String> getExtralReadableRelays(
-      List<String> extralRelays, int maxRelayNum) {
+      List<String> extralRelays, int maxExtralNum) {
     List<String> list = [];
 
-    int sameNum = 0;
+    int extralNum = 0;
     for (var extralRelay in extralRelays) {
       try {
         extralRelay = RelayAddrUtil.handle(extralRelay);
       } catch (e) {
         print("handle relay addr error $e $extralRelay");
+        continue;
       }
 
-      var relay = _relays[extralRelay];
-      if (relay == null || !relay.relayStatus.readAccess) {
-        // not contains or can't readable
-        list.add(extralRelay);
+      var relay = _allRelays[extralRelay];
+      list.add(extralRelay);
+      if (relay != null && relay.relayStatus.readAccess) {
+        // current pool contain this relay, direct use it.
       } else {
-        sameNum++;
+        // current pool not contain this relay, add it to list start to connect and add to pool.
+        extralNum++;
+      }
+
+      if (extralNum >= maxExtralNum) {
+        break;
       }
     }
 
-    var needExtralNum = maxRelayNum - sameNum;
-    if (needExtralNum <= 0) {
-      return [];
-    }
-
-    if (list.length < needExtralNum) {
-      return list;
-    }
-
-    return list.sublist(0, needExtralNum);
-  }
-
-  void removeTempRelay(String addr) {
-    var relay = _tempRelays.remove(addr);
-    if (relay != null) {
-      relay.disconnect();
-    }
-  }
-
-  Relay? getTempRelay(String url) {
-    return _tempRelays[url];
+    return list;
   }
 
   bool readable() {
-    for (var relay in _relays.values) {
+    for (var relay in _allRelays.values) {
       if (relay.relayStatus.connected == ClientConneccted.CONNECTED &&
           relay.relayStatus.readAccess) {
         return true;
@@ -709,7 +622,7 @@ class RelayPool {
   }
 
   bool writable() {
-    for (var relay in _relays.values) {
+    for (var relay in _allRelays.values) {
       if (relay.relayStatus.connected == ClientConneccted.CONNECTED &&
           relay.relayStatus.writeAccess) {
         return true;

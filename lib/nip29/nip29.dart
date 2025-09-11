@@ -16,7 +16,7 @@ class NIP29 {
           ["e", eventId]
         ],
         "");
-    await nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
+    await nostr.sendEvent(event, targetRelays: relays);
   }
 
   static Future<void> editStatus(Nostr nostr, GroupIdentifier groupIdentifier,
@@ -44,7 +44,7 @@ class NIP29 {
 
     var relays = [groupIdentifier.host];
     var event = Event(nostr.publicKey, EventKind.GROUP_EDIT_STATUS, tags, "");
-    await nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
+    await nostr.sendEvent(event, targetRelays: relays);
   }
 
   static Future<void> addMember(
@@ -58,7 +58,7 @@ class NIP29 {
           ["p", pubkey]
         ],
         "");
-    await nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
+    await nostr.sendEvent(event, targetRelays: relays);
   }
 
   static Future<void> removeMember(
@@ -73,6 +73,6 @@ class NIP29 {
         ],
         "");
 
-    await nostr.sendEvent(event, tempRelays: relays, targetRelays: relays);
+    await nostr.sendEvent(event, targetRelays: relays, relayTypes: []);
   }
 }

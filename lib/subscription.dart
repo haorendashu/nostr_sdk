@@ -9,7 +9,7 @@ class Subscription {
   /// Subscription ID
   String get id => _id;
 
-  Subscription(this.filters, this.onEvent, [String? id])
+  Subscription(this.filters, this.onEvent, {String? id, this.onComplete})
       : _id = id ?? StringUtil.rndNameStr(16);
 
   /// Returns the subscription as a Nostr subscription request in JSON format
@@ -21,5 +21,25 @@ class Subscription {
     }
 
     return json;
+  }
+
+  bool isSubscription = false;
+
+  Function? onComplete;
+
+  final List<String> queryingRelays = [];
+
+  void addQueryingRelay(String relayAddr) {
+    if (!queryingRelays.contains(relayAddr)) {
+      queryingRelays.add(relayAddr);
+    }
+  }
+
+  void relayCompleteQuery(String relayAddr) {
+    queryingRelays.remove(relayAddr);
+  }
+
+  bool isCompleted() {
+    return queryingRelays.isEmpty;
   }
 }

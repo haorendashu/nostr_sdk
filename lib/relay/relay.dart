@@ -24,8 +24,8 @@ abstract class Relay {
   // subscriptions
   final Map<String, Subscription> _subscriptions = {};
 
-  // quries
-  final Map<String, Subscription> _queries = {};
+  // // quries
+  // final Map<String, Subscription> _queries = {};
 
   Relay(this.url, this.relayStatus) {}
 
@@ -102,41 +102,45 @@ abstract class Relay {
     _subscriptions[subscription.id] = subscription;
   }
 
-  bool checkAndCompleteSubscription(String id) {
-    // all subscription should be close
-    var sub = _subscriptions.remove(id);
-    if (sub != null) {
-      send(["CLOSE", id]);
-      return true;
-    }
-    return false;
+  void removeSubscription(String id) {
+    _subscriptions.remove(id);
   }
+
+  // bool checkAndCompleteSubscription(String id) {
+  //   // all subscription should be close
+  //   var sub = _subscriptions.remove(id);
+  //   if (sub != null) {
+  //     send(["CLOSE", id]);
+  //     return true;
+  //   }
+  //   return false;
+  // }
 
   bool hasSubscription() {
     return _subscriptions.isNotEmpty;
   }
 
-  void saveQuery(Subscription subscription) {
-    _queries[subscription.id] = subscription;
-  }
+  // void saveQuery(Subscription subscription) {
+  //   _queries[subscription.id] = subscription;
+  // }
 
-  bool checkAndCompleteQuery(String id) {
-    // all subscription should be close
-    var sub = _queries.remove(id);
-    if (sub != null) {
-      send(["CLOSE", id]);
-      return true;
-    }
-    return false;
-  }
+  // bool checkAndCompleteQuery(String id) {
+  //   // all subscription should be close
+  //   var sub = _queries.remove(id);
+  //   if (sub != null) {
+  //     send(["CLOSE", id]);
+  //     return true;
+  //   }
+  //   return false;
+  // }
 
-  bool checkQuery(String id) {
-    return _queries[id] != null;
-  }
+  // bool checkQuery(String id) {
+  //   return _queries[id] != null;
+  // }
 
-  Subscription? getRequestSubscription(String id) {
-    return _queries[id];
-  }
+  // Subscription? getRequestSubscription(String id) {
+  //   return _queries[id];
+  // }
 
   Function? relayStatusCallback;
 
