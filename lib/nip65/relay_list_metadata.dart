@@ -20,8 +20,8 @@ class RelayListMetadata {
   RelayListMetadata.fromRelayList(List<String> relays) {
     for (var addr in relays) {
       addr = RelayAddrUtil.handle(addr);
-      readAbleRelays = [addr];
-      writeAbleRelays = [addr];
+      readAbleRelays.add(addr);
+      writeAbleRelays.add(addr);
       relayRWMap[addr] = RelayRW.READ_WRITE;
     }
 
