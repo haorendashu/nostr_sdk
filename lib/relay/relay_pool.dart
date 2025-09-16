@@ -145,11 +145,9 @@ class RelayPool {
     return _allRelays[url];
   }
 
-  bool relayDoQuery(Relay relay, Subscription subscription, bool sendAfterAuth,
-      {bool runBeforeConnected = false}) {
-    if ((!runBeforeConnected &&
-            relay.relayStatus.connected != ClientConneccted.CONNECTED) ||
-        !relay.relayStatus.readAccess) {
+  bool relayDoQuery(
+      Relay relay, Subscription subscription, bool sendAfterAuth) {
+    if (!relay.relayStatus.readAccess) {
       return false;
     }
 
@@ -522,10 +520,6 @@ class RelayPool {
     _subscriptions[subscription.id] = subscription;
 
     var currentRelays = findRelays(targetRelays, relayTypes, both: bothRelay);
-    if (currentRelays.isEmpty) {
-      print("findRelay is empty");
-      print(subscription.toJson());
-    }
     for (var relay in currentRelays) {
       relayDoQuery(relay, subscription, sendAfterAuth);
     }
@@ -570,6 +564,7 @@ class RelayPool {
   Relay checkOrGenTempRelay(String addr) {
     var relay = _allRelays[addr];
     if (relay == null) {
+      print("tempRelay gened $addr");
       relay = tempRelayGener(addr);
       relay.onMessage = _onEvent;
       relay.connect();
