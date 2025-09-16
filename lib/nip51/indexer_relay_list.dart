@@ -61,7 +61,7 @@ class IndexerRelayList {
 
     var content = await nostr.nostrSigner
         .nip44Encrypt(nostr.publicKey, jsonEncode(contentRelayList));
-    if (StringUtil.isNotBlank(content)) {
+    if (StringUtil.isBlank(content)) {
       return null;
     }
 
