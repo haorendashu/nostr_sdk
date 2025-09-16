@@ -15,6 +15,13 @@ class RelayType {
 
   static const List<int> NORMAL_AND_CACHE = [NORMAL, LOCAL, CACHE];
 
+  static const List<int> NORMAL_AND_CACHE_AND_INDEX = [
+    NORMAL,
+    LOCAL,
+    CACHE,
+    INDEX
+  ];
+
   static const List<int> ONLY_TEMP = [TEMP];
 
   static const List<int> ALL = [NORMAL, TEMP, LOCAL, CACHE];
