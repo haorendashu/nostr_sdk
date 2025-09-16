@@ -5,24 +5,28 @@ import 'package:nostr_sdk/event_kind.dart';
 import 'package:nostr_sdk/nostr.dart';
 import 'package:nostr_sdk/utils/string_util.dart';
 
+import '../signer/nostr_signer.dart';
+
 class IndexerRelayList {
+  late int createdAt;
+
   List<String> relays = [];
 
-  static Future<IndexerRelayList?> parse(Event e, Nostr nostr) async {
+  static Future<IndexerRelayList?> parse(
+      Event e, NostrSigner nostrSigner) async {
     var indexerRelayList = IndexerRelayList();
+    indexerRelayList.createdAt = e.createdAt;
 
     String? contentSource;
     try {
-      contentSource =
-          await nostr.nostrSigner.nip44Decrypt(nostr.publicKey, e.content);
+      contentSource = await nostrSigner.nip44Decrypt(e.pubkey, e.content);
     } catch (err) {
       print("IndexerRelayList parse nip44Decrypt error: $err");
     }
 
     if (StringUtil.isBlank(contentSource)) {
       try {
-        contentSource =
-            await nostr.nostrSigner.decrypt(nostr.publicKey, e.content);
+        contentSource = await nostrSigner.decrypt(e.pubkey, e.content);
       } catch (err) {
         print("IndexerRelayList parse decrypt error: $err");
       }

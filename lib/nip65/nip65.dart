@@ -5,7 +5,7 @@ import '../event_kind.dart';
 import '../relay/relay_status.dart';
 
 class NIP65 {
-  static void save(Nostr nostr, List<RelayStatus> relayStatuses) {
+  static Event save(Nostr nostr, List<RelayStatus> relayStatuses) {
     List tags = [];
     for (var relayStatus in relayStatuses) {
       var readAccess = relayStatus.readAccess;
@@ -25,5 +25,6 @@ class NIP65 {
 
     var e = Event(nostr.publicKey, EventKind.RELAY_LIST_METADATA, tags, "");
     nostr.sendEvent(e);
+    return e;
   }
 }

@@ -73,7 +73,9 @@ class RelayPool {
     if (await relay.connect()) {
       if (autoSubscribe) {
         for (Subscription subscription in _subscriptions.values) {
-          relay.send(subscription.toJson());
+          if (subscription.isSubscription) {
+            relay.send(subscription.toJson());
+          }
         }
       }
       if (init) {

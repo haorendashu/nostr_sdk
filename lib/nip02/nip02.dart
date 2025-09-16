@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:nostr_sdk/utils/relay_addr_util.dart';
 
 import '../relay/relay_status.dart';
+import '../relay/relay_type.dart';
 import '../utils/string_util.dart';
 
 class NIP02 {
@@ -36,7 +37,7 @@ class NIP02 {
 
         key = RelayAddrUtil.handle(key);
 
-        var relayStatus = RelayStatus(key);
+        var relayStatus = RelayStatus(key, relayType: RelayType.NORMAL);
         relayStatus.readAccess = readAcccess;
         relayStatus.writeAccess = writeAcccess;
 

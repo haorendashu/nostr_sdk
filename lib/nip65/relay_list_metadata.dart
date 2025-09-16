@@ -1,3 +1,6 @@
+import 'package:nostr_sdk/nostr.dart';
+import 'package:nostr_sdk/utils/relay_addr_util.dart';
+
 import '../event.dart';
 import '../event_kind.dart';
 
@@ -11,6 +14,20 @@ class RelayListMetadata {
   late List<String> readAbleRelays;
 
   late List<String> writeAbleRelays;
+
+  Map<String, int> relayRWMap = {};
+
+  RelayListMetadata.fromRelayList(List<String> relays) {
+    for (var addr in relays) {
+      addr = RelayAddrUtil.handle(addr);
+      readAbleRelays = [addr];
+      writeAbleRelays = [addr];
+      relayRWMap[addr] = RelayRW.READ_WRITE;
+    }
+
+    pubkey = "";
+    createdAt = 0;
+  }
 
   RelayListMetadata.fromEvent(Event event) {
     pubkey = event.pubkey;
@@ -48,9 +65,54 @@ class RelayListMetadata {
           if (writeAble) {
             writeAbleRelays.add(addr);
           }
+
+          if (readAble && writeAble) {
+            relayRWMap[addr] = RelayRW.READ_WRITE;
+          } else if (readAble) {
+            relayRWMap[addr] = RelayRW.READ;
+          } else if (writeAble) {
+            relayRWMap[addr] = RelayRW.WRITE;
+          }
         }
       }
     }
+  }
+
+  Future<Event> toEvent(Nostr nostr) async {
+    List<dynamic> tags = [];
+    Map<String, List<dynamic>> relaysTag = {};
+    for (var addr in readAbleRelays) {
+      addr = RelayAddrUtil.handle(addr);
+
+      var relayTag = relaysTag[addr];
+      if (relayTag == null) {
+        relayTag = ["r", addr, "read"];
+        relaysTag[addr] = relayTag;
+      }
+    }
+    for (var addr in writeAbleRelays) {
+      addr = RelayAddrUtil.handle(addr);
+
+      var relayTag = relaysTag[addr];
+      if (relayTag == null) {
+        relayTag = ["r", addr, "write"];
+        relaysTag[addr] = relayTag;
+      } else {
+        // there was a relayTag, add write to it
+        relayTag = ["r", addr];
+        relaysTag[addr] = relayTag;
+      }
+    }
+
+    var e = Event(
+      pubkey,
+      EventKind.RELAY_LIST_METADATA,
+      tags,
+      "",
+    );
+
+    await nostr.signEvent(e);
+    return e;
   }
 }
 
@@ -67,3 +129,9 @@ class RelayListMetadata {
 //     this.readAble = true,
 //   });
 // }
+
+class RelayRW {
+  static const READ = -1;
+  static const READ_WRITE = 0;
+  static const WRITE = 1;
+}

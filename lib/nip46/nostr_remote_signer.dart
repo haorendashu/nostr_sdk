@@ -12,6 +12,7 @@ import '../relay/relay_base.dart';
 import '../relay/relay_isolate.dart';
 import '../relay/relay_mode.dart';
 import '../relay/relay_status.dart';
+import '../relay/relay_type.dart';
 import '../signer/local_nostr_signer.dart';
 import '../signer/nostr_signer.dart';
 import '../utils/string_util.dart';
@@ -97,7 +98,7 @@ class NostrRemoteSigner extends NostrSigner {
   }
 
   Future<Relay> _connectToRelay(String relayAddr) async {
-    RelayStatus relayStatus = RelayStatus(relayAddr);
+    RelayStatus relayStatus = RelayStatus(relayAddr, relayType: RelayType.TEMP);
     Relay? relay;
     if (relayMode == RelayMode.BASE_MODE) {
       relay = RelayBase(
