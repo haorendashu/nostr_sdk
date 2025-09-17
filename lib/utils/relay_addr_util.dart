@@ -2,6 +2,7 @@ import 'package:nostr_sdk/utils/string_util.dart';
 
 class RelayAddrUtil {
   static String handle(String addr) {
+    addr = addr.trim();
     var uri = Uri.parse(addr);
     if (StringUtil.isBlank(uri.path) &&
         StringUtil.isBlank(uri.query) &&
