@@ -46,6 +46,7 @@ class RelayListMetadata {
           }
 
           var addr = tag[1];
+          addr = RelayAddrUtil.handle(addr);
           bool writeAble = true;
           bool readAble = true;
 
