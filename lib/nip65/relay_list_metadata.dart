@@ -18,15 +18,17 @@ class RelayListMetadata {
   Map<String, int> relayRWMap = {};
 
   RelayListMetadata.fromRelayList(List<String> relays) {
+    readAbleRelays = [];
+    writeAbleRelays = [];
+    pubkey = "";
+    createdAt = 0;
+
     for (var addr in relays) {
       addr = RelayAddrUtil.handle(addr);
       readAbleRelays.add(addr);
       writeAbleRelays.add(addr);
       relayRWMap[addr] = RelayRW.READ_WRITE;
     }
-
-    pubkey = "";
-    createdAt = 0;
   }
 
   RelayListMetadata.fromEvent(Event event) {
