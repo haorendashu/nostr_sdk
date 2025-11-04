@@ -23,6 +23,9 @@ class Filter {
   /// a list of values that are referenced in a "h" tag (vine.hol.is relay requirement)
   List<String>? h;
 
+  /// a list of values that are referenced in a "d" tag (NIP-33 addressable events)
+  List<String>? d;
+
   /// a timestamp, events must be newer than this to pass
   int? since;
 
@@ -44,6 +47,7 @@ class Filter {
       this.p,
       this.t,
       this.h,
+      this.d,
       this.since,
       this.until,
       this.limit,
@@ -59,6 +63,7 @@ class Filter {
     p = json['#p'] == null ? null : List<String>.from(json['#p']);
     t = json['#t'] == null ? null : List<String>.from(json['#t']);
     h = json['#h'] == null ? null : List<String>.from(json['#h']);
+    d = json['#d'] == null ? null : List<String>.from(json['#d']);
     since = json['since'];
     until = json['until'];
     limit = json['limit'];
@@ -88,6 +93,9 @@ class Filter {
     }
     if (h != null) {
       data['#h'] = h;
+    }
+    if (d != null) {
+      data['#d'] = d;
     }
     if (since != null) {
       data['since'] = since;
@@ -125,6 +133,7 @@ class Filter {
     List<String> ps = [];
     List<String> ts = [];
     List<String> hs = [];
+    List<String> ds = [];
     for (var tag in event.tags) {
       if (tag is List && tag.length > 1) {
         var k = tag[0];
@@ -138,6 +147,8 @@ class Filter {
           ts.add(v);
         } else if (k == "h") {
           hs.add(v);
+        } else if (k == "d") {
+          ds.add(v);
         }
       }
     }
@@ -167,6 +178,13 @@ class Filter {
           return h!.contains(v);
         })))) {
       // filter query h but hs don't contains h.
+      return false;
+    }
+    if (d != null &&
+        (!(ds.any((v) {
+          return d!.contains(v);
+        })))) {
+      // filter query d but ds don't contains d.
       return false;
     }
 
