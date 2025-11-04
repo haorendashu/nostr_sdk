@@ -45,6 +45,7 @@ This is one of the most feature-complete Nostr implementations available, offeri
 | [NIP-44](https://github.com/nostr-protocol/nips/blob/master/44.md) | Versioned Encryption | ✅ |
 | [NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) | Remote Signing | ✅ |
 | [NIP-47](https://github.com/nostr-protocol/nips/blob/master/47.md) | Wallet Connect | ✅ |
+| [NIP-50](https://github.com/nostr-protocol/nips/blob/master/50.md) | Search Capability | ✅ |
 | [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, follow sets) | ✅ |
 | [NIP-55](https://github.com/nostr-protocol/nips/blob/master/55.md) | Android signer integration | ✅ |
 | [NIP-58](https://github.com/nostr-protocol/nips/blob/master/58.md) | Badges | ✅ |
@@ -217,6 +218,19 @@ final globalFeedId = nostr.subscribe(
     print('   at ${DateTime.fromMillisecondsSinceEpoch(event.createdAt * 1000)}');
   },
 );
+
+// Search for specific content using NIP-50
+final searchResults = await nostr.relayPool.searchEvents(
+  'bitcoin',
+  kinds: [EventKind.TEXT_NOTE],
+  limit: 20,
+  timeout: Duration(seconds: 10),
+);
+
+for (final event in searchResults) {
+  print('🔍 Found: ${event.content}');
+  print('   by ${Nip19.encodeSimplePubKey(event.pubkey)}');
+}
 
 // Subscribe to your mentions
 final mentionId = nostr.subscribe(
@@ -471,6 +485,53 @@ if (nostr.isReadOnly()) {
   print('Running in read-only mode');
 }
 ```
+
+### Search (NIP-50)
+
+```dart
+// Simple text search
+final results = await nostr.relayPool.searchEvents('nostr protocol');
+
+// Advanced search with filters
+final bitcoinPosts = await nostr.relayPool.searchEvents(
+  'bitcoin lightning',
+  kinds: [EventKind.TEXT_NOTE],
+  authors: ['specific_author_pubkey'],
+  since: DateTime.now().subtract(Duration(days: 7)),
+  limit: 50,
+  timeout: Duration(seconds: 10),
+  relayUrls: ['wss://relay.nostr.band', 'wss://search.nos.today'],
+);
+
+// Process search results
+for (final event in bitcoinPosts) {
+  print('📄 ${event.content}');
+  print('   from ${event.sources.join(", ")}');
+}
+
+// Low-level search using Filter class
+final filter = Filter(
+  search: 'decentralized social media',
+  kinds: [EventKind.TEXT_NOTE],
+  limit: 10,
+);
+
+final subscriptionId = nostr.relayPool.subscribe(
+  [filter.toJson()],
+  (event) => print('Search result: ${event.content}'),
+);
+
+// Remember to unsubscribe when done
+nostr.relayPool.unsubscribe(subscriptionId);
+```
+
+**Search Features:**
+- Full-text search across event content
+- Combine with other filters (author, kind, time range)
+- Automatic result deduplication
+- Timeout support for responsive UIs
+- Works with NIP-50 compatible relays
+- Graceful fallback for unsupported relays
 
 ### Encryption (NIP-44)
 

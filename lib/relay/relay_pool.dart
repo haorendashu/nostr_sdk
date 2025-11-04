@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:nostr_sdk/utils/relay_addr_util.dart';
 
 import '../event.dart';
 import '../event_kind.dart';
+import '../filter.dart';
 import '../nostr.dart';
 import '../relay_local/relay_local.dart';
 import '../subscription.dart';
@@ -46,6 +48,9 @@ class RelayPool {
   List<EventFilter> eventFilters;
 
   Function(String, String)? onNotice;
+  
+  // Track pending AUTH events to match with OK responses
+  final Map<String, String> _pendingAuthEvents = {};
 
   Relay Function(String) tempRelayGener;
 
@@ -278,6 +283,40 @@ class RelayPool {
       }
     } else if (messageType == "OK") {
       print('📡 OK response from ${relay.url}: $json');
+      
+      // Check if this OK is for an AUTH event
+      if (json.length >= 3) {
+        final eventId = json[1] as String;
+        final success = json[2] as bool;
+        final message = json.length > 3 ? json[3] as String : '';
+        
+        // Check if this is responding to our AUTH event
+        if (_pendingAuthEvents.containsKey(eventId)) {
+          _pendingAuthEvents.remove(eventId);
+          
+          if (success) {
+            relay.relayStatus.authed = true;
+            print('🔐 AUTH succeeded for ${relay.url}');
+            
+            // Send pending messages
+            for (var message in relay.pendingAuthedMessages) {
+              relay.send(message);
+            }
+            relay.pendingAuthedMessages.clear();
+            
+            // Send subscriptions
+            if (relay.hasSubscription()) {
+              var subs = relay.getSubscriptions();
+              for (var subscription in subs) {
+                relay.send(subscription.toJson());
+              }
+            }
+          } else {
+            relay.relayStatus.authed = false;
+            print('🔐 AUTH failed for ${relay.url}: $message');
+          }
+        }
+      }
     } else if (messageType == "NOTICE") {
       print('📡 NOTICE from ${relay.url}: $json');
       if (json.length < 2) {
@@ -300,7 +339,7 @@ class RelayPool {
       final challenge = json[1] as String;
       print('🔐 Challenge: ${challenge.substring(0, 16)}...');
       var tags = [
-        ["relay", relay.relayStatus.addr],
+        ["relay", relay.url],
         ["challenge", challenge]
       ];
       Event? event =
@@ -308,33 +347,15 @@ class RelayPool {
       event = await localNostr.nostrSigner.signEvent(event);
       if (event != null) {
         print('🔐 Sending AUTH response for challenge: ${challenge.substring(0, 16)}...');
+        
+        // Track this AUTH event to match with OK response
+        _pendingAuthEvents[event.id] = relay.url;
+        
         relay.send(["AUTH", event.toJson()], forceSend: true);
-
-        // Note: Do NOT set authed = true here - wait for relay confirmation
-        // The relay needs to confirm our AUTH response before we can send pending messages
         print('🔐 AUTH response sent, waiting for relay confirmation...');
-
+        
         if (relay.pendingAuthedMessages.isNotEmpty) {
           print('🔐 Pending ${relay.pendingAuthedMessages.length} messages for after auth confirmation');
-          Future.delayed(const Duration(seconds: 1), () {
-            // TODO: This is a temporary workaround - we should wait for proper AUTH confirmation
-            // For now, assume AUTH succeeded after delay
-            relay.relayStatus.authed = true;
-            print('🔐 Assuming AUTH succeeded, sending ${relay.pendingAuthedMessages.length} pending messages');
-            
-            for (var message in relay.pendingAuthedMessages) {
-              relay.send(message);
-            }
-            relay.pendingAuthedMessages.clear();
-
-            // send subcription, but some subscrpition will send twice
-            if (relay.hasSubscription()) {
-              var subs = relay.getSubscriptions();
-              for (var subscription in subs) {
-                relay.send(subscription.toJson());
-              }
-            }
-          });
         }
       }
     }
@@ -791,5 +812,74 @@ class RelayPool {
     }
 
     return false;
+  }
+
+  /// Convenience method for searching events using NIP-50.
+  /// 
+  /// Performs a full-text search across event content on NIP-50 compatible relays.
+  /// 
+  /// Parameters:
+  /// - [query]: The search query string
+  /// - [kinds]: Optional list of event kinds to filter
+  /// - [authors]: Optional list of author public keys
+  /// - [since]: Optional start time for the search range
+  /// - [until]: Optional end time for the search range
+  /// - [limit]: Maximum number of results to return (default: 100)
+  /// - [timeout]: How long to wait for results (default: 5 seconds)
+  /// - [relayUrls]: Optional specific relays to query (uses all connected relays if not specified)
+  /// 
+  /// Returns a list of [Event] objects matching the search criteria.
+  /// Results are automatically deduplicated by event ID.
+  Future<List<Event>> searchEvents(
+    String query, {
+    List<int>? kinds,
+    List<String>? authors,
+    DateTime? since,
+    DateTime? until,
+    int? limit,
+    Duration? timeout,
+    List<String>? relayUrls,
+  }) async {
+    // Create filter with search parameter
+    final filter = Filter(
+      search: query,
+      kinds: kinds,
+      authors: authors,
+      since: since != null ? since.millisecondsSinceEpoch ~/ 1000 : null,
+      until: until != null ? until.millisecondsSinceEpoch ~/ 1000 : null,
+      limit: limit ?? 100,
+    );
+
+    // Collect events
+    final eventMap = <String, Event>{};
+    
+    // Set up timeout
+    final timeoutDuration = timeout ?? Duration(seconds: 5);
+    final completer = Completer<List<Event>>();
+    Timer? timeoutTimer;
+    String? subscriptionId;
+    
+    // Query with callback - use regular subscribe which doesn't wait for all relays
+    subscriptionId = subscribe(
+      [filter.toJson()],
+      (event) {
+        // Deduplicate by event ID
+        eventMap[event.id] = event;
+      },
+      targetRelays: relayUrls,
+    );
+    
+    // Set up timeout to complete with whatever we have
+    timeoutTimer = Timer(timeoutDuration, () {
+      // Timeout reached, return what we have
+      if (subscriptionId != null) {
+        unsubscribe(subscriptionId);
+      }
+      if (!completer.isCompleted) {
+        completer.complete(eventMap.values.toList());
+      }
+    });
+    
+    return completer.future;
   }
 }

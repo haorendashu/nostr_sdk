@@ -44,6 +44,12 @@ class RelayBase extends Relay {
       _wsChannel!.stream.listen((message) {
         if (onMessage != null) {
           final List<dynamic> json = jsonDecode(message);
+          
+          // Log AUTH-related messages for debugging
+          if (json.length > 0 && json[0] == 'AUTH') {
+            print("📡 Raw message from $url: $json");
+          }
+          
           onMessage!(this, json);
         }
       }, onError: (error) async {
@@ -69,48 +75,14 @@ class RelayBase extends Relay {
         (_wsChannel != null &&
             relayStatus.connected == ClientConneccted.CONNECTED)) {
       try {
-        print("🔍 DEBUG: Raw message: $message");
-        print("🔍 Message type: ${message.runtimeType}");
-        print("🔍 Message[0] type: ${message[0].runtimeType}");
-        if (message.length > 1) {
-          print("🔍 Message[1] type: ${message[1].runtimeType}");
-        }
-        
-        // Verify WebSocket channel type
-        print("🔍 WebSocket channel type: ${_wsChannel.runtimeType}");
-        print("🔍 WebSocket sink type: ${_wsChannel!.sink.runtimeType}");
-        
-        // Verify it's JSON-serializable before sanitization
-        try {
-          final testEncode = jsonEncode(message);
-          print("✅ Original message is JSON-serializable");
-        } catch (e) {
-          print("❌ ERROR: Original message is NOT JSON-serializable: $e");
-        }
-        
-        // CRITICAL: Check signature before sanitization
-        if (message.length > 1 && message[0] == 'EVENT') {
-          final eventData = message[1];
-          if (eventData is Map && eventData.containsKey('sig')) {
-            print('🔍 SIGNATURE BEFORE SANITIZATION: ${eventData['sig']}');
-          }
+        // Log AUTH-related messages for debugging
+        if (message.length > 0 && message[0] == 'AUTH') {
+          print("🔐 AUTH response sent, waiting for relay confirmation...");
         }
         
         // Defensive serialization: Ensure all data is JSON-serializable
         final sanitizedMessage = sanitizeForJson(message);
-        print("🔍 DEBUG: Sanitized message: $sanitizedMessage");
-        
-        // CRITICAL: Check signature after sanitization
-        if (sanitizedMessage.length > 1 && sanitizedMessage[0] == 'EVENT') {
-          final eventData = sanitizedMessage[1];
-          if (eventData is Map && eventData.containsKey('sig')) {
-            print('🔍 SIGNATURE AFTER SANITIZATION: ${eventData['sig']}');
-          }
-        }
-        
         final encoded = jsonEncode(sanitizedMessage);
-        print("🔍 DEBUG: Encoded JSON: $encoded");
-        print("🔍 DEBUG: Encoded JSON length: ${encoded.length} characters");
         _wsChannel!.sink.add(encoded);
         return true;
       } catch (e) {

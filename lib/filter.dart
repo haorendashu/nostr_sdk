@@ -32,6 +32,9 @@ class Filter {
   /// maximum number of events to be returned in the initial query
   int? limit;
 
+  /// NIP-50 search query string for full-text search in content field
+  String? search;
+
   /// Default constructor
   Filter(
       {this.ids,
@@ -43,7 +46,8 @@ class Filter {
       this.h,
       this.since,
       this.until,
-      this.limit});
+      this.limit,
+      this.search});
 
   /// Deserialize a filter from a JSON
   Filter.fromJson(Map<String, dynamic> json) {
@@ -58,6 +62,7 @@ class Filter {
     since = json['since'];
     until = json['until'];
     limit = json['limit'];
+    search = json['search'];
   }
 
   /// Serialize a filter in JSON
@@ -92,6 +97,9 @@ class Filter {
     }
     if (limit != null) {
       data['limit'] = limit;
+    }
+    if (search != null) {
+      data['search'] = search;
     }
     return data;
   }
