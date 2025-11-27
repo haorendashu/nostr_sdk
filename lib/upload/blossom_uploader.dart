@@ -86,8 +86,9 @@ class BolssomUploader {
         nostr.publicKey, EventKind.BLOSSOM_HTTP_AUTH, tags, "Upload $fileName");
     await nostr.signEvent(nip98Event);
     // log(jsonEncode(nip98Event.toJson()));
+    // BUD-01 spec requires standard base64 encoding (not base64url)
     headers["Authorization"] =
-        "Nostr ${base64Url.encode(utf8.encode(jsonEncode(nip98Event.toJson())))}";
+        "Nostr ${base64.encode(utf8.encode(jsonEncode(nip98Event.toJson())))}";
 
     log(jsonEncode(headers));
 
