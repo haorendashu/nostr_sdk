@@ -255,11 +255,11 @@ class RelayPool {
         relay.send(["CLOSE", subId]);
 
         subscription.relayCompleteQuery(relay.url);
-        if (subscription.onComplete != null) {
+        if (subscription.isCompleted()) {
           // all query completed, remove subscription
           _subscriptions.remove(subId);
-          if (subscription.isCompleted()) {
-            // all query completed, call onComplete
+          // all query completed, call onComplete
+          if (subscription.onComplete != null) {
             subscription.onComplete!();
           }
         }
