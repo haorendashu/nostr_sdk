@@ -53,4 +53,9 @@ class NostrRemoteRequest {
 
     return null;
   }
+
+  @override
+  String toString() {
+    return 'NostrRemoteRequest{id: $id, method: $method, params: $params}';
+  }
 }
