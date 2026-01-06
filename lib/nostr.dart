@@ -211,7 +211,8 @@ class Nostr {
     List<Map<String, dynamic>> filters,
     Function(Event) onEvent, {
     String? id,
-    Function? onComplete,
+    Function? onComplete, // all relay EOSE call this method
+    Function(String)? onEOSE, // every relay EOSE call this method
     List<String>? targetRelays,
     List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth = false,
@@ -222,6 +223,7 @@ class Nostr {
       onEvent,
       id: id,
       onComplete: onComplete,
+      onEOSE: onEOSE,
       targetRelays: targetRelays,
       relayTypes: relayTypes,
       sendAfterAuth: sendAfterAuth,

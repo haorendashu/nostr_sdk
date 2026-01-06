@@ -254,6 +254,10 @@ class RelayPool {
         // This is a query, close when eose received
         relay.send(["CLOSE", subId]);
 
+        if (subscription.onEOSE != null) {
+          subscription.onEOSE!(relay.url);
+        }
+
         subscription.relayCompleteQuery(relay.url);
         if (subscription.isCompleted()) {
           // all query completed, remove subscription
@@ -502,7 +506,8 @@ class RelayPool {
     List<Map<String, dynamic>> filters,
     Function(Event) onEvent, {
     String? id,
-    Function? onComplete,
+    Function? onComplete, // all relay EOSE call this method
+    Function(String)? onEOSE, // every relay EOSE call this method
     List<String>? targetRelays,
     List<int> relayTypes = RelayType.NORMAL_AND_CACHE,
     bool sendAfterAuth =
@@ -515,8 +520,8 @@ class RelayPool {
 
     handleAddrList(targetRelays);
 
-    Subscription subscription =
-        Subscription(filters, onEvent, id: id, onComplete: onComplete);
+    Subscription subscription = Subscription(filters, onEvent,
+        id: id, onComplete: onComplete, onEOSE: onEOSE);
     _subscriptions[subscription.id] = subscription;
 
     var currentRelays = findRelays(targetRelays, relayTypes, both: bothRelay);

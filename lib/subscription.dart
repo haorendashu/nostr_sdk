@@ -9,8 +9,13 @@ class Subscription {
   /// Subscription ID
   String get id => _id;
 
-  Subscription(this.filters, this.onEvent, {String? id, this.onComplete})
-      : _id = id ?? StringUtil.rndNameStr(16);
+  Subscription(
+    this.filters,
+    this.onEvent, {
+    String? id,
+    this.onComplete,
+    this.onEOSE,
+  }) : _id = id ?? StringUtil.rndNameStr(16);
 
   /// Returns the subscription as a Nostr subscription request in JSON format
   List<dynamic> toJson() {
@@ -26,6 +31,8 @@ class Subscription {
   bool isSubscription = false;
 
   Function? onComplete;
+
+  Function(String)? onEOSE;
 
   final List<String> queryingRelays = [];
 
