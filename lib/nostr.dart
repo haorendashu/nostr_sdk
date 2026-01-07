@@ -142,9 +142,17 @@ class Nostr {
     return null;
   }
 
+  bool _isClose = false;
+
+  // close and you shouldn't use it again.
   void close() {
+    _isClose = true;
     _pool.removeAll();
     nostrSigner.close();
+  }
+
+  bool isClose() {
+    return _isClose;
   }
 
   void addInitQuery(List<Map<String, dynamic>> filters, Function(Event) onEvent,
