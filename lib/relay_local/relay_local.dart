@@ -27,8 +27,10 @@ class RelayLocal extends Relay with RelayLocalMixin {
         "0.1.0");
   }
 
-  void broadcaseToLocal(Map<String, dynamic> event) {
-    relayDB.addEvent(event);
+  Future<void> broadcaseToLocal(Map<String, dynamic> event) async {
+    if (await relayDB.addEvent(event) > 0) {
+      sendToFilters(null, event);
+    }
   }
 
   @override
@@ -50,7 +52,7 @@ class RelayLocal extends Relay with RelayLocalMixin {
       } else if (action == "REQ") {
         doReq(null, message);
       } else if (action == "CLOSE") {
-        // this relay only use to handle cache event, so it wouldn't push new event to client.
+        close(null, message);
       } else if (action == "AUTH") {
         // don't handle the message
       } else if (action == "COUNT") {

@@ -131,7 +131,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
 
   Future<int> addEvent(Map<String, dynamic> event) async {
     if (checkAndSetEventFromMem(event)) {
-      return 0;
+      return -1;
     }
 
     // clone one, avoid change by others.
@@ -139,7 +139,7 @@ class RelayLocalDB extends RelayDBExtral with LaterFunction {
     penddingEventMspList.add(event);
     later(_batchAddEvents);
 
-    return 0;
+    return 1;
   }
 
   Future<void> _batchAddEvents() async {

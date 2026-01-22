@@ -1,3 +1,6 @@
+import 'package:nostr_sdk/event.dart';
+import 'package:nostr_sdk/filter.dart';
+
 import '../event_kind.dart';
 import 'relay_db.dart';
 import 'relay_local_db.dart';
@@ -9,7 +12,7 @@ mixin RelayLocalMixin {
 
   void callback(String? connId, List<dynamic> list);
 
-  void doEvent(String? connId, List message) {
+  Future<void> doEvent(String? connId, List message) async {
     var event = message[1];
     var id = event["id"];
     var eventKind = event["kind"];
@@ -38,29 +41,66 @@ mixin RelayLocalMixin {
       }
 
       // maybe it shouldn't insert here, due to it doesn't had a source.
-      getRelayDB().addEvent(event);
+      var addResult = await getRelayDB().addEvent(event);
+      if (addResult > 0) {
+        sendToFilters(connId, event);
+      }
     }
 
     // send callback
     callback(connId, ["OK", id, true]);
   }
 
+  Map<String, List<Filter>> filtersMap = {};
+
   Future<void> doReq(String? connId, List message) async {
     if (message.length > 2) {
       var subscriptionId = message[1];
 
+      List<Filter> filters = [];
       for (var i = 2; i < message.length; i++) {
-        var filter = message[i];
+        var filterJson = message[i];
+        var filter = Filter.fromJson(filterJson);
+        filters.add(filter);
 
-        var events = await getRelayDB().doQueryEvent(filter);
+        var events = await getRelayDB().doQueryEvent(filterJson);
         for (var event in events) {
           // send callback
           callback(connId, ["EVENT", subscriptionId, event]);
         }
       }
+      filtersMap[subscriptionId] = filters;
 
       // query complete, send callback
       callback(connId, ["EOSE", subscriptionId]);
+    }
+  }
+
+  void sendToFilters(String? connId, Map<String, dynamic> eventMap) {
+    var event = Event.fromJson(eventMap);
+    for (var entry in filtersMap.entries) {
+      var subscriptionId = entry.key;
+      var filters = entry.value;
+
+      var checkResult = false;
+      for (var filter in filters) {
+        if (filter.checkEvent(event)) {
+          checkResult = true;
+          break;
+        }
+      }
+
+      if (checkResult) {
+        // send callback
+        callback(connId, ["EVENT", subscriptionId, eventMap]);
+      }
+    }
+  }
+
+  void close(String? connId, List message) {
+    if (message.length > 2) {
+      var subscriptId = message[1];
+      filtersMap.remove(subscriptId);
     }
   }
 
