@@ -196,16 +196,6 @@ class RelayPool {
     final messageType = json[0];
     if (messageType == 'EVENT') {
       try {
-        if (relay is! RelayLocal &&
-            (relay.relayStatus.relayType != RelayType.CACHE)) {
-          var event = Map<String, dynamic>.from(json[2]);
-          var kind = event["kind"];
-          if (!CACHE_AVOID_EVENTS.contains(kind)) {
-            event["sources"] = [relay.url];
-            _broadcaseToCache(event);
-          }
-        }
-
         final event = Event.fromJson(json[2]);
 
         // add some statistics
@@ -215,6 +205,16 @@ class RelayPool {
         for (var eventFilter in eventFilters) {
           if (eventFilter.check(event)) {
             return;
+          }
+        }
+
+        if (relay is! RelayLocal &&
+            (relay.relayStatus.relayType != RelayType.CACHE)) {
+          var event = Map<String, dynamic>.from(json[2]);
+          var kind = event["kind"];
+          if (!CACHE_AVOID_EVENTS.contains(kind)) {
+            event["sources"] = [relay.url];
+            _broadcaseToCache(event);
           }
         }
 
