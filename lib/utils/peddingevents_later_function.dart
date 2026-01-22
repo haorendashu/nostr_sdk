@@ -9,8 +9,10 @@ mixin PenddingEventsLaterFunction {
 
   bool _running = true;
 
-  void later(Event event, Function(List<Event>) func, Function? completeFunc) {
-    penddingEvents.add(event);
+  void later(Event? event, Function(List<Event>) func, Function? completeFunc) {
+    if (event != null) {
+      penddingEvents.add(event);
+    }
     if (latering) {
       return;
     }
