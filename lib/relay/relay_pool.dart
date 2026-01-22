@@ -352,6 +352,7 @@ class RelayPool {
     handleAddrList(targetRelays);
 
     final Subscription subscription = Subscription(filters, onEvent, id: id);
+    subscription.isSubscription = true;
     _subscriptions[subscription.id] = subscription;
     // send(subscription.toJson());
 
