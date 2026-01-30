@@ -234,6 +234,7 @@ class RelayPool {
         }
         final subId = json[1] as String;
         var subscription = _subscriptions[subId];
+        subscription ??= _initQuery[subId];
 
         if (subscription != null) {
           subscription.onEvent(event);
