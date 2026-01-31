@@ -26,6 +26,9 @@ class Filter {
   /// maximum number of events to be returned in the initial query
   int? limit;
 
+  /// a list of tag values, the event must have at least one tag with this value
+  List<String>? t;
+
   /// Default constructor
   Filter(
       {this.ids,
@@ -48,6 +51,7 @@ class Filter {
     since = json['since'];
     until = json['until'];
     limit = json['limit'];
+    t = json['#t'] == null ? null : List<String>.from(json['#t']);
   }
 
   /// Serialize a filter in JSON
@@ -77,28 +81,54 @@ class Filter {
     if (limit != null) {
       data['limit'] = limit;
     }
+    if (t != null) {
+      data['#t'] = t;
+    }
     return data;
   }
 
   bool checkEvent(Event event) {
-    if (ids != null && (!ids!.contains(event.id))) {
-      return false;
+    int passTimes = 0;
+
+    if (ids != null) {
+      if (!ids!.contains(event.id)) {
+        return false;
+      } else {
+        passTimes++;
+      }
     }
-    if (authors != null && (!authors!.contains(event.pubkey))) {
-      return false;
+    if (authors != null) {
+      if (!authors!.contains(event.pubkey)) {
+        return false;
+      } else {
+        passTimes++;
+      }
     }
-    if (kinds != null && (!kinds!.contains(event.kind))) {
-      return false;
+    if (kinds != null) {
+      if (!kinds!.contains(event.kind)) {
+        return false;
+      } else {
+        passTimes++;
+      }
     }
-    if (since != null && since! > event.createdAt) {
-      return false;
+    if (since != null) {
+      if (since! > event.createdAt) {
+        return false;
+      } else {
+        passTimes++;
+      }
     }
-    if (until != null && until! < event.createdAt) {
-      return false;
+    if (until != null) {
+      if (until! < event.createdAt) {
+        return false;
+      } else {
+        passTimes++;
+      }
     }
 
     List<String> es = [];
     List<String> ps = [];
+    List<String> ts = [];
     for (var tag in event.tags) {
       if (tag is List && tag.length > 1) {
         var k = tag[0];
@@ -108,24 +138,45 @@ class Filter {
           es.add(v);
         } else if (k == "p") {
           ps.add(v);
+        } else if (k == "t") {
+          ts.add(v);
         }
       }
     }
-    if (e != null &&
-        (!(es.any((v) {
-          return e!.contains(v);
-        })))) {
-      // filter query e but es don't contains e.
-      return false;
+    if (e != null) {
+      if (!(es.any((v) {
+        return e!.contains(v);
+      }))) {
+        // filter query e but es don't contains e.
+        return false;
+      } else {
+        passTimes++;
+      }
     }
-    if (p != null &&
-        (!(ps.any((v) {
-          return p!.contains(v);
-        })))) {
-      // filter query p but ps don't contains p.
-      return false;
+    if (p != null) {
+      if (!(ps.any((v) {
+        return p!.contains(v);
+      }))) {
+        // filter query p but ps don't contains p.
+        return false;
+      } else {
+        passTimes++;
+      }
+    }
+    if (t != null) {
+      if (!(ts.any((v) {
+        return t!.contains(v);
+      }))) {
+        // filter query t but ts don't contains t.
+        return false;
+      } else {
+        passTimes++;
+      }
     }
 
-    return true;
+    if (passTimes > 0) {
+      return true;
+    }
+    return false;
   }
 }
