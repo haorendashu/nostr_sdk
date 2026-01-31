@@ -29,6 +29,9 @@ class Filter {
   /// a list of tag values, the event must have at least one tag with this value
   List<String>? t;
 
+  /// search for events with a text query
+  String? search;
+
   /// Default constructor
   Filter(
       {this.ids,
@@ -52,6 +55,7 @@ class Filter {
     until = json['until'];
     limit = json['limit'];
     t = json['#t'] == null ? null : List<String>.from(json['#t']);
+    search = json['search'];
   }
 
   /// Serialize a filter in JSON
@@ -83,6 +87,9 @@ class Filter {
     }
     if (t != null) {
       data['#t'] = t;
+    }
+    if (search != null) {
+      data['search'] = search;
     }
     return data;
   }
@@ -120,6 +127,14 @@ class Filter {
     }
     if (until != null) {
       if (until! < event.createdAt) {
+        return false;
+      } else {
+        passTimes++;
+      }
+    }
+
+    if (search != null) {
+      if (!event.content.contains(search!)) {
         return false;
       } else {
         passTimes++;
