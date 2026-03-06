@@ -8,6 +8,10 @@ class EventBoxList extends EventMemBox {
 
   EventBoxList() : super();
 
+  void addEventBoxToFirst(EventMemBox box) {
+    _eventBoxList.insert(0, box);
+  }
+
   void addEventBox(EventMemBox box) {
     _eventBoxList.add(box);
   }
