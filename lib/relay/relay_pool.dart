@@ -366,11 +366,11 @@ class RelayPool {
   }
 
   bool relayDoSubscribe(
-      Relay relay, Subscription subscription, bool sendAfterAuth,
-      {bool runBeforeConnected = false}) {
-    if ((!runBeforeConnected &&
-            relay.relayStatus.connected != ClientConneccted.CONNECTED) ||
-        !relay.relayStatus.readAccess) {
+    Relay relay,
+    Subscription subscription,
+    bool sendAfterAuth,
+  ) {
+    if (!relay.relayStatus.readAccess) {
       return false;
     }
 
