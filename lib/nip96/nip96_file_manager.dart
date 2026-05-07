@@ -12,13 +12,13 @@ import '../utils/base64.dart';
 import '../utils/hash_util.dart';
 import '../utils/string_util.dart';
 
-class NIP98Response<T> {
+class NIP96Response<T> {
   final int statusCode;
   final Headers headers;
   final T? data;
   final dynamic rawData;
 
-  NIP98Response({
+  NIP96Response({
     required this.statusCode,
     required this.headers,
     required this.data,
@@ -28,23 +28,23 @@ class NIP98Response<T> {
   bool get isSuccess => statusCode >= 200 && statusCode < 300;
 }
 
-class NIP98FileManager {
+class NIP96FileManager {
   static final Dio dio = Dio();
   // Keep debug logs disabled by default after troubleshooting.
   static const bool _enableDebugLog = false;
 
   static void _logInfo(String message) {
     if (!_enableDebugLog) return;
-    log('[NIP98FileManager] $message');
+    log('[NIP96FileManager] $message');
   }
 
   static void _logError(String message, [Object? error]) {
     if (!_enableDebugLog) return;
     if (error != null) {
-      log('[NIP98FileManager] $message: $error');
+      log('[NIP96FileManager] $message: $error');
       return;
     }
-    log('[NIP98FileManager] $message');
+    log('[NIP96FileManager] $message');
   }
 
   static String normalizeUrl(String value) {
@@ -115,7 +115,7 @@ class NIP98FileManager {
     return 'Nostr $encoded';
   }
 
-  static Future<NIP98Response<T>> request<T>(
+  static Future<NIP96Response<T>> request<T>(
     Nostr nostr, {
     required String absoluteUrl,
     required String method,
@@ -188,7 +188,7 @@ class NIP98FileManager {
       'request done method=$normalizedMethod url=$normalizedUrl status=${response.statusCode} bodyType=${response.data.runtimeType}',
     );
 
-    return NIP98Response<T>(
+    return NIP96Response<T>(
       statusCode: response.statusCode ?? 0,
       headers: response.headers,
       data: response.data as T?,
@@ -196,7 +196,7 @@ class NIP98FileManager {
     );
   }
 
-  static Future<NIP98Response<dynamic>> list(
+  static Future<NIP96Response<dynamic>> list(
     Nostr nostr,
     String absoluteUrl, {
     Map<String, dynamic>? headers,
@@ -209,7 +209,7 @@ class NIP98FileManager {
     );
   }
 
-  static Future<NIP98Response<Uint8List?>> download(
+  static Future<NIP96Response<Uint8List?>> download(
     Nostr nostr,
     String absoluteUrl, {
     String? expectedSha256,
@@ -245,7 +245,7 @@ class NIP98FileManager {
     _logInfo(
         'download done url=$absoluteUrl status=${response.statusCode} bytes=${bytes?.length ?? 0}');
 
-    return NIP98Response<Uint8List?>(
+    return NIP96Response<Uint8List?>(
       statusCode: response.statusCode,
       headers: response.headers,
       data: bytes,
@@ -286,7 +286,7 @@ class NIP98FileManager {
     return response.isSuccess;
   }
 
-  static Future<NIP98Response<dynamic>> uploadBinary(
+  static Future<NIP96Response<dynamic>> uploadBinary(
     Nostr nostr,
     String absoluteUrl,
     Uint8List bytes, {
@@ -312,7 +312,7 @@ class NIP98FileManager {
     );
   }
 
-  static Future<NIP98Response<dynamic>> uploadFile(
+  static Future<NIP96Response<dynamic>> uploadFile(
     Nostr nostr,
     String absoluteUrl,
     String filePath, {
