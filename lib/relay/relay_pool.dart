@@ -584,8 +584,8 @@ class RelayPool {
     return relay;
   }
 
-  List<String> getExtralReadableRelays(
-      List<String> extralRelays, int maxExtralNum) {
+  List<String> getExtralRelays(List<String> extralRelays, int maxExtralNum,
+      {bool writable = false}) {
     List<String> list = [];
 
     int extralNum = 0;
@@ -598,14 +598,18 @@ class RelayPool {
       }
 
       var relay = _allRelays[extralRelay];
-      list.add(extralRelay);
-      if (relay != null && relay.relayStatus.readAccess) {
+      if (relay != null &&
+          (writable
+              ? relay.relayStatus.writeAccess
+              : relay.relayStatus.readAccess)) {
         // current pool contain this relay, direct use it.
+        continue;
       } else {
         // current pool not contain this relay, add it to list start to connect and add to pool.
         extralNum++;
       }
 
+      list.add(extralRelay);
       if (extralNum >= maxExtralNum) {
         break;
       }

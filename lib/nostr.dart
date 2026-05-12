@@ -277,9 +277,9 @@ class Nostr {
     _pool.reconnect();
   }
 
-  List<String> getExtralReadableRelays(
-      List<String> extralRelays, int maxRelayNum) {
-    return _pool.getExtralReadableRelays(extralRelays, maxRelayNum);
+  List<String> getExtralRelays(List<String> extralRelays, int maxRelayNum,
+      {bool writable = false}) {
+    return _pool.getExtralRelays(extralRelays, maxRelayNum, writable: writable);
   }
 
   bool readable() {
